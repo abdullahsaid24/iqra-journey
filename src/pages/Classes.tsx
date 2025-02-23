@@ -1,12 +1,14 @@
 
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
-import { Clock, MapPin, Phone } from "lucide-react";
+import { Clock, MapPin, Phone, BookOpen, Book } from "lucide-react";
 
 const Classes = () => {
   const schedule = [
     {
       day: "Saturday",
+      type: "Quran",
+      gender: "Brothers",
       sessions: [
         { time: "1:00 - 3:00 PM", group: "Quran Studies (Junior Group)" },
         { time: "3:00 - 5:00 PM", group: "Quran Studies (Senior Group)" }
@@ -14,6 +16,8 @@ const Classes = () => {
     },
     {
       day: "Sunday",
+      type: "Quran",
+      gender: "Sisters",
       sessions: [
         { time: "1:00 - 3:00 PM", group: "Quran Studies (Junior Group)" },
         { time: "3:00 - 5:00 PM", group: "Quran Studies (Senior Group)" }
@@ -21,24 +25,32 @@ const Classes = () => {
     },
     {
       day: "Monday",
+      type: "Islamic Studies",
+      gender: "Brothers",
       sessions: [
         { time: "6:30 - 8:30 PM", group: "Islamic Studies (Junior Group)" }
       ]
     },
     {
       day: "Wednesday",
+      type: "Islamic Studies",
+      gender: "Sisters",
       sessions: [
         { time: "6:30 - 9:00 PM", group: "Islamic Studies (Senior Group)" }
       ]
     },
     {
       day: "Thursday",
+      type: "Islamic Studies",
+      gender: "Brothers",
       sessions: [
         { time: "6:30 - 9:00 PM", group: "Islamic Studies (Senior Group)" }
       ]
     },
     {
       day: "Friday",
+      type: "Islamic Studies",
+      gender: "Sisters",
       sessions: [
         { time: "6:30 - 8:30 PM", group: "Islamic Studies (Junior Group)" }
       ]
@@ -56,10 +68,40 @@ const Classes = () => {
             
             <div className="grid gap-6">
               {schedule.map((day, index) => (
-                <div key={index} className="card">
-                  <h2 className="text-xl font-outfit font-medium mb-4">
-                    {day.day}
-                  </h2>
+                <div 
+                  key={index} 
+                  className={`card ${
+                    day.type === "Quran" 
+                      ? "border-l-4 border-l-primary" 
+                      : "border-l-4 border-l-secondary"
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-outfit font-medium">
+                      {day.day}
+                    </h2>
+                    <div className="flex items-center gap-3">
+                      <span className={`text-sm px-3 py-1 rounded-full ${
+                        day.gender === "Brothers" 
+                          ? "bg-blue-100 text-blue-700" 
+                          : "bg-purple-100 text-purple-700"
+                      }`}>
+                        {day.gender}
+                      </span>
+                      <span className={`flex items-center gap-1 text-sm ${
+                        day.type === "Quran" 
+                          ? "text-primary" 
+                          : "text-secondary"
+                      }`}>
+                        {day.type === "Quran" ? (
+                          <BookOpen className="h-4 w-4" />
+                        ) : (
+                          <Book className="h-4 w-4" />
+                        )}
+                        {day.type}
+                      </span>
+                    </div>
+                  </div>
                   <div className="space-y-3">
                     {day.sessions.map((session, sIndex) => (
                       <div key={sIndex} className="flex items-center gap-4 text-muted-foreground">
