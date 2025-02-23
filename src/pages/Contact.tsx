@@ -46,7 +46,9 @@ const Contact = () => {
                     </div>
                     <div>
                       <h2 className="font-outfit text-lg font-medium mb-2">Location</h2>
-                      <p className="text-muted-foreground">123 Islamic Center St</p>
+                      <p className="text-muted-foreground">3711A 98 St NW</p>
+                      <p className="text-muted-foreground">Edmonton, AB, T6E 5V4</p>
+                      <p className="text-muted-foreground">Canada</p>
                     </div>
                   </div>
 
@@ -56,7 +58,7 @@ const Contact = () => {
                     </div>
                     <div>
                       <h2 className="font-outfit text-lg font-medium mb-2">Phone</h2>
-                      <p className="text-muted-foreground">(555) 123-4567</p>
+                      <p className="text-muted-foreground">(780) 990-7823</p>
                     </div>
                   </div>
 
@@ -66,7 +68,7 @@ const Contact = () => {
                     </div>
                     <div>
                       <h2 className="font-outfit text-lg font-medium mb-2">Email</h2>
-                      <p className="text-muted-foreground">info@iqradugsi.com</p>
+                      <p className="text-muted-foreground">mualim@iqradugsi.com</p>
                     </div>
                   </div>
                 </div>

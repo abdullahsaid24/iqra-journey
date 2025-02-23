@@ -8,39 +8,39 @@ const Classes = () => {
     {
       day: "Saturday",
       sessions: [
-        { time: "1:00 - 3:00 PM", group: "Quran Level 1 (Ages 7-10)" },
-        { time: "3:00 - 5:00 PM", group: "Quran Level 2 (Ages 11-14)" }
+        { time: "1:00 - 3:00 PM", group: "Quran Studies (Junior Group)" },
+        { time: "3:00 - 5:00 PM", group: "Quran Studies (Senior Group)" }
       ]
     },
     {
       day: "Sunday",
       sessions: [
-        { time: "1:00 - 3:00 PM", group: "Quran Level 1 (Ages 7-10)" },
-        { time: "3:00 - 5:00 PM", group: "Quran Level 2 (Ages 11-14)" }
+        { time: "1:00 - 3:00 PM", group: "Quran Studies (Junior Group)" },
+        { time: "3:00 - 5:00 PM", group: "Quran Studies (Senior Group)" }
       ]
     },
     {
       day: "Monday",
       sessions: [
-        { time: "6:30 - 8:30 PM", group: "Quran Level 1 (Ages 7-10)" }
+        { time: "6:30 - 8:30 PM", group: "Islamic Studies (Junior Group)" }
       ]
     },
     {
       day: "Wednesday",
       sessions: [
-        { time: "6:30 - 9:00 PM", group: "Quran Level 2 (Ages 11-14)" }
+        { time: "6:30 - 9:00 PM", group: "Islamic Studies (Senior Group)" }
       ]
     },
     {
       day: "Thursday",
       sessions: [
-        { time: "6:30 - 9:00 PM", group: "Quran Level 2 (Ages 11-14)" }
+        { time: "6:30 - 9:00 PM", group: "Islamic Studies (Senior Group)" }
       ]
     },
     {
       day: "Friday",
       sessions: [
-        { time: "6:30 - 8:30 PM", group: "Quran Level 1 (Ages 7-10)" }
+        { time: "6:30 - 8:30 PM", group: "Islamic Studies (Junior Group)" }
       ]
     }
   ];
@@ -80,14 +80,16 @@ const Classes = () => {
                   <MapPin className="h-5 w-5 text-primary shrink-0 mt-0.5" />
                   <div>
                     <h3 className="font-medium mb-1">Location</h3>
-                    <p className="text-muted-foreground">123 Islamic Center St</p>
+                    <p className="text-muted-foreground">3711A 98 St NW</p>
+                    <p className="text-muted-foreground">Edmonton, AB, T6E 5V4</p>
+                    <p className="text-muted-foreground">Canada</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
                   <Phone className="h-5 w-5 text-primary shrink-0 mt-0.5" />
                   <div>
                     <h3 className="font-medium mb-1">Contact</h3>
-                    <p className="text-muted-foreground">(555) 123-4567</p>
+                    <p className="text-muted-foreground">(780) 990-7823</p>
                   </div>
                 </div>
               </div>
