@@ -16,6 +16,7 @@ interface Student {
 const Signup = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [isAdultSignup, setIsAdultSignup] = useState(false);
   const [students, setStudents] = useState<Student[]>([{ name: "", age: "" }]);
   const [formData, setFormData] = useState({
     parentName: "",
@@ -65,6 +66,21 @@ const Signup = () => {
               <p className="text-muted-foreground mb-6">
                 Join our Islamic education program today
               </p>
+              
+              <div className="flex justify-center gap-4 mb-8">
+                <Button
+                  variant={isAdultSignup ? "outline" : "default"}
+                  onClick={() => setIsAdultSignup(false)}
+                >
+                  Under 18 Registration
+                </Button>
+                <Button
+                  variant={isAdultSignup ? "default" : "outline"}
+                  onClick={() => setIsAdultSignup(true)}
+                >
+                  Adult Registration
+                </Button>
+              </div>
             </div>
 
             <div className="card">
@@ -82,77 +98,85 @@ const Signup = () => {
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-8">
-                {/* Parent/Guardian Information */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium">Parent/Guardian Information</h3>
-                  <div className="grid gap-4">
-                    <div>
-                      <Label htmlFor="parentName">Full Name</Label>
-                      <div className="flex mt-1.5">
-                        <User className="w-4 h-4 text-muted-foreground mr-2 mt-3" />
-                        <Input
-                          id="parentName"
-                          name="parentName"
-                          type="text"
-                          required
-                          value={formData.parentName}
-                          onChange={handleParentInfoChange}
-                        />
+                {!isAdultSignup && (
+                  // Parent/Guardian Information
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-medium">Parent/Guardian Information</h3>
+                    <div className="grid gap-4">
+                      <div>
+                        <Label htmlFor="parentName">Full Name</Label>
+                        <div className="flex mt-1.5">
+                          <User className="w-4 h-4 text-muted-foreground mr-2 mt-3" />
+                          <Input
+                            id="parentName"
+                            name="parentName"
+                            type="text"
+                            required
+                            value={formData.parentName}
+                            onChange={handleParentInfoChange}
+                          />
+                        </div>
                       </div>
-                    </div>
 
-                    <div>
-                      <Label htmlFor="email">Email Address</Label>
-                      <div className="flex mt-1.5">
-                        <Mail className="w-4 h-4 text-muted-foreground mr-2 mt-3" />
-                        <Input
-                          id="email"
-                          name="email"
-                          type="email"
-                          required
-                          value={formData.email}
-                          onChange={handleParentInfoChange}
-                        />
+                      <div>
+                        <Label htmlFor="email">Email Address</Label>
+                        <div className="flex mt-1.5">
+                          <Mail className="w-4 h-4 text-muted-foreground mr-2 mt-3" />
+                          <Input
+                            id="email"
+                            name="email"
+                            type="email"
+                            required
+                            value={formData.email}
+                            onChange={handleParentInfoChange}
+                          />
+                        </div>
                       </div>
-                    </div>
 
-                    <div>
-                      <Label htmlFor="phone">Phone Number</Label>
-                      <div className="flex mt-1.5">
-                        <Phone className="w-4 h-4 text-muted-foreground mr-2 mt-3" />
-                        <Input
-                          id="phone"
-                          name="phone"
-                          type="tel"
-                          required
-                          value={formData.phone}
-                          onChange={handleParentInfoChange}
-                        />
+                      <div>
+                        <Label htmlFor="phone">Phone Number</Label>
+                        <div className="flex mt-1.5">
+                          <Phone className="w-4 h-4 text-muted-foreground mr-2 mt-3" />
+                          <Input
+                            id="phone"
+                            name="phone"
+                            type="tel"
+                            required
+                            value={formData.phone}
+                            onChange={handleParentInfoChange}
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
+                )}
 
                 {/* Students Information */}
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-medium">Student Information</h3>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={addStudent}
-                      className="flex items-center gap-2"
-                    >
-                      <Plus className="h-4 w-4" /> Add Student
-                    </Button>
+                    <h3 className="text-lg font-medium">
+                      {isAdultSignup ? "Student Information" : "Children Information"}
+                    </h3>
+                    {!isAdultSignup && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={addStudent}
+                        className="flex items-center gap-2"
+                      >
+                        <Plus className="h-4 w-4" /> Add Student
+                      </Button>
+                    )}
                   </div>
 
-                  {students.map((student, index) => (
+                  {(isAdultSignup ? [students[0]] : students).map((student, index) => (
                     <div key={index} className="p-4 border rounded-lg space-y-4">
                       <div className="flex items-center justify-between">
-                        <h4 className="font-medium">Student {index + 1}</h4>
-                        {students.length > 1 && (
+                        <h4 className="font-medium">
+                          {isAdultSignup ? "Personal Information" : `Student ${index + 1}`}
+                        </h4>
+                        {!isAdultSignup && students.length > 1 && (
                           <Button
                             type="button"
                             variant="ghost"
@@ -183,12 +207,46 @@ const Signup = () => {
                             id={`student-age-${index}`}
                             type="number"
                             required
-                            min="4"
-                            max="18"
+                            min={isAdultSignup ? "18" : "4"}
+                            max={isAdultSignup ? "100" : "17"}
                             value={student.age}
                             onChange={(e) => handleStudentChange(index, "age", e.target.value)}
                           />
                         </div>
+
+                        {isAdultSignup && (
+                          <>
+                            <div>
+                              <Label htmlFor="email">Email Address</Label>
+                              <div className="flex mt-1.5">
+                                <Mail className="w-4 h-4 text-muted-foreground mr-2 mt-3" />
+                                <Input
+                                  id="email"
+                                  name="email"
+                                  type="email"
+                                  required
+                                  value={formData.email}
+                                  onChange={handleParentInfoChange}
+                                />
+                              </div>
+                            </div>
+
+                            <div>
+                              <Label htmlFor="phone">Phone Number</Label>
+                              <div className="flex mt-1.5">
+                                <Phone className="w-4 h-4 text-muted-foreground mr-2 mt-3" />
+                                <Input
+                                  id="phone"
+                                  name="phone"
+                                  type="tel"
+                                  required
+                                  value={formData.phone}
+                                  onChange={handleParentInfoChange}
+                                />
+                              </div>
+                            </div>
+                          </>
+                        )}
                       </div>
                     </div>
                   ))}
