@@ -51,7 +51,7 @@ const Signup = () => {
     e.preventDefault();
     const baseUrl = "https://buy.stripe.com/5kA17652s7Ui1uEcMM";
     const quantity = students.length;
-    const finalUrl = `${baseUrl}?quantity=${quantity}`;
+    const finalUrl = `${baseUrl}#quantity=${quantity}`;
     window.location.href = finalUrl;
   };
 
