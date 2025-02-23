@@ -49,7 +49,10 @@ const Signup = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    window.location.href = "https://buy.stripe.com/5kA17652s7Ui1uEcMM";
+    const baseUrl = "https://buy.stripe.com/5kA17652s7Ui1uEcMM";
+    const quantity = students.length;
+    const finalUrl = `${baseUrl}?quantity=${quantity}`;
+    window.location.href = finalUrl;
   };
 
   return (
@@ -72,7 +75,7 @@ const Signup = () => {
                   variant={isAdultSignup ? "outline" : "default"}
                   onClick={() => setIsAdultSignup(false)}
                 >
-                  Under 18 Registration
+                  Parent Registration
                 </Button>
                 <Button
                   variant={isAdultSignup ? "default" : "outline"}
