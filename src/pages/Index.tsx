@@ -2,7 +2,7 @@
 import Navigation from "@/components/Navigation";
 import Hero from "@/components/Hero";
 import Footer from "@/components/Footer";
-import { Calendar, BookOpen, Users } from "lucide-react";
+import { BookOpen, Users } from "lucide-react";
 
 const Index = () => {
   const features = [
@@ -13,22 +13,18 @@ const Index = () => {
         "Comprehensive curriculum focusing on Quran recitation, memorization, and understanding of Islamic principles.",
     },
     {
-      icon: <Calendar className="h-6 w-6" />,
-      title: "Flexible Schedule",
-      description:
-        "Classes available throughout the week, accommodating different age groups and learning levels.",
-    },
-    {
       icon: <Users className="h-6 w-6" />,
-      title: "Expert Teachers",
+      title: "Classes for All Ages",
       description:
-        "Learn from qualified instructors dedicated to nurturing your spiritual and educational growth.",
+        "Multiple classes available for both brothers and sisters, catering to different learning levels and abilities.",
     },
   ];
 
   const quote = {
+    arabic: "خَيْرُكُمْ مَنْ تَعَلَّمَ الْقُرْآنَ وَعَلَّمَهُ",
     text: "The best among you are those who learn the Quran and teach it.",
     author: "Prophet Muhammad ﷺ",
+    source: "Sahih al-Bukhari"
   };
 
   return (
@@ -39,7 +35,7 @@ const Index = () => {
         <Hero />
 
         <section className="container px-4 py-24">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {features.map((feature, index) => (
               <div
                 key={index}
@@ -65,11 +61,15 @@ const Index = () => {
         <section className="bg-muted py-24">
           <div className="container px-4">
             <blockquote className="max-w-3xl mx-auto text-center space-y-4">
-              <p className="text-2xl md:text-3xl font-outfit">
+              <p className="text-2xl md:text-3xl font-outfit mb-4">
+                {quote.arabic}
+              </p>
+              <p className="text-xl md:text-2xl font-outfit">
                 "{quote.text}"
               </p>
               <footer className="text-muted-foreground">
-                – {quote.author}
+                <p>– {quote.author}</p>
+                <p className="text-sm mt-1">{quote.source}</p>
               </footer>
             </blockquote>
           </div>
