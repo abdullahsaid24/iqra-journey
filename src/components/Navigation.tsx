@@ -35,17 +35,31 @@ const Navigation = () => {
               ["Home", "/"],
               ["About", "/about"],
               ["Classes", "/classes"],
+              ["Sign Up", "/signup"],
               ["Contact", "/contact"],
+              ["Quran Portal", "https://quranportal.example.com"], // Replace with actual portal URL
             ].map(([title, url]) => (
-              <Link
-                key={title}
-                to={url}
-                className={`nav-link ${
-                  location.pathname === url ? "text-primary font-medium" : ""
-                }`}
-              >
-                {title}
-              </Link>
+              url.startsWith('http') ? (
+                <a
+                  key={title}
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="nav-link"
+                >
+                  {title}
+                </a>
+              ) : (
+                <Link
+                  key={title}
+                  to={url}
+                  className={`nav-link ${
+                    location.pathname === url ? "text-primary font-medium" : ""
+                  }`}
+                >
+                  {title}
+                </Link>
+              )
             ))}
           </div>
 
@@ -70,17 +84,31 @@ const Navigation = () => {
               ["Home", "/"],
               ["About", "/about"],
               ["Classes", "/classes"],
+              ["Sign Up", "/signup"],
               ["Contact", "/contact"],
+              ["Quran Portal", "https://quranportal.example.com"], // Replace with actual portal URL
             ].map(([title, url]) => (
-              <Link
-                key={title}
-                to={url}
-                className={`block py-2 ${
-                  location.pathname === url ? "text-primary font-medium" : ""
-                }`}
-              >
-                {title}
-              </Link>
+              url.startsWith('http') ? (
+                <a
+                  key={title}
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block py-2"
+                >
+                  {title}
+                </a>
+              ) : (
+                <Link
+                  key={title}
+                  to={url}
+                  className={`block py-2 ${
+                    location.pathname === url ? "text-primary font-medium" : ""
+                  }`}
+                >
+                  {title}
+                </Link>
+              )
             ))}
           </div>
         </div>
