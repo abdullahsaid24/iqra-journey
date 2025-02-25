@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
@@ -7,24 +8,15 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { Mail, Phone, User, Plus, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 
 interface Student {
   name: string;
   age: string;
 }
 
-interface Registration {
-  registration_type: 'parent' | 'adult';
-  parent_name: string | null;
-  email: string;
-  phone: string;
-}
-
-interface RegistrationStudent {
-  registration_id: string;
-  name: string;
-  age: number;
-}
+type Registration = Database['public']['Tables']['registrations']['Insert']
+type RegistrationStudent = Database['public']['Tables']['registration_students']['Insert']
 
 const Signup = () => {
   const { toast } = useToast();
@@ -79,7 +71,14 @@ const Signup = () => {
         .select()
         .single();
 
-      if (registrationError) throw registrationError;
+      if (registrationError) {
+        console.error('Registration error:', registrationError);
+        throw registrationError;
+      }
+
+      if (!registration?.id) {
+        throw new Error('Registration ID not returned');
+      }
 
       // Insert student information
       const studentsToInsert: RegistrationStudent[] = students.map(student => ({
@@ -92,7 +91,16 @@ const Signup = () => {
         .from('registration_students')
         .insert(studentsToInsert);
 
-      if (studentsError) throw studentsError;
+      if (studentsError) {
+        console.error('Students registration error:', studentsError);
+        throw studentsError;
+      }
+
+      // Show success message
+      toast({
+        title: "Registration Successful",
+        description: "Redirecting to payment...",
+      });
 
       // Redirect to Stripe payment
       const baseUrl = "https://buy.stripe.com/5kA17652s7Ui1uEcMM";
