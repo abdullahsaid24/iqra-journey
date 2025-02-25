@@ -14,7 +14,7 @@ const Hero = () => {
         <div className="max-w-3xl mx-auto text-center space-y-8">
           <h1 className="hero-title animate-slide-up">
             Welcome to Iqra Dugsi
-            <span className="block text-2xl text-primary mt-2">Serving 20+ students and growing</span>
+            <span className="block text-2xl text-primary mt-2">Proudly serving our community for over 20 years</span>
           </h1>
           
           <p className="text-lg md:text-xl text-muted-foreground animate-slide-up [animation-delay:200ms]">
