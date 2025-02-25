@@ -1,7 +1,7 @@
 
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
-import { GraduationCap, Book, Heart } from "lucide-react";
+import { GraduationCap, Book } from "lucide-react";
 
 const About = () => {
   const offerings = [
@@ -14,11 +14,6 @@ const About = () => {
       title: "Islamic Studies",
       description: "Comprehensive learning of Aqeedah, Fiqh, Seerah, and Hadith.",
       icon: <GraduationCap className="h-6 w-6" />
-    },
-    {
-      title: "Arabic Language",
-      description: "Develop Arabic reading and comprehension skills for better understanding.",
-      icon: <Heart className="h-6 w-6" />
     }
   ];
 
@@ -39,7 +34,7 @@ const About = () => {
         <section className="bg-muted py-24">
           <div className="container px-4">
             <h2 className="section-title text-center">What We Offer</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-12">
               {offerings.map((offering, index) => (
                 <div key={index} className="card bg-card">
                   <div className="h-12 w-12 rounded-lg bg-primary/10 text-primary flex items-center justify-center mb-4">
