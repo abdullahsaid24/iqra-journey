@@ -28,7 +28,7 @@ const Hero = () => {
               </Link>
             </Button>
             <Button asChild variant="outline" size="lg">
-              <Link to="/contact">Contact Us</Link>
+              <Link to="/signup">Sign Up</Link>
             </Button>
           </div>
         </div>
