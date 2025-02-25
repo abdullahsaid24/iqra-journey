@@ -258,6 +258,71 @@ export type Database = {
           },
         ]
       }
+      registration_students: {
+        Row: {
+          age: number
+          created_at: string
+          id: string
+          name: string
+          registration_id: string | null
+        }
+        Insert: {
+          age: number
+          created_at?: string
+          id?: string
+          name: string
+          registration_id?: string | null
+        }
+        Update: {
+          age?: number
+          created_at?: string
+          id?: string
+          name?: string
+          registration_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "registration_students_registration_id_fkey"
+            columns: ["registration_id"]
+            isOneToOne: false
+            referencedRelation: "registrations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      registrations: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          parent_name: string | null
+          payment_status: string
+          phone: string
+          registration_type: Database["public"]["Enums"]["registration_type"]
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          parent_name?: string | null
+          payment_status?: string
+          phone: string
+          registration_type: Database["public"]["Enums"]["registration_type"]
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          parent_name?: string | null
+          payment_status?: string
+          phone?: string
+          registration_type?: Database["public"]["Enums"]["registration_type"]
+          status?: string
+        }
+        Relationships: []
+      }
       student_feedback: {
         Row: {
           created_at: string
@@ -561,6 +626,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "teacher" | "parent" | "student"
+      registration_type: "parent" | "adult"
     }
     CompositeTypes: {
       [_ in never]: never

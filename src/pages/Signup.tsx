@@ -13,6 +13,19 @@ interface Student {
   age: string;
 }
 
+interface Registration {
+  registration_type: 'parent' | 'adult';
+  parent_name: string | null;
+  email: string;
+  phone: string;
+}
+
+interface RegistrationStudent {
+  registration_id: string;
+  name: string;
+  age: number;
+}
+
 const Signup = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -53,21 +66,23 @@ const Signup = () => {
 
     try {
       // Insert registration data
+      const registrationData: Registration = {
+        registration_type: isAdultSignup ? 'adult' : 'parent',
+        parent_name: isAdultSignup ? students[0].name : formData.parentName,
+        email: formData.email,
+        phone: formData.phone,
+      };
+
       const { data: registration, error: registrationError } = await supabase
         .from('registrations')
-        .insert({
-          registration_type: isAdultSignup ? 'adult' : 'parent',
-          parent_name: isAdultSignup ? students[0].name : formData.parentName,
-          email: formData.email,
-          phone: formData.phone,
-        })
+        .insert(registrationData)
         .select()
         .single();
 
       if (registrationError) throw registrationError;
 
       // Insert student information
-      const studentsToInsert = students.map(student => ({
+      const studentsToInsert: RegistrationStudent[] = students.map(student => ({
         registration_id: registration.id,
         name: student.name,
         age: parseInt(student.age),
