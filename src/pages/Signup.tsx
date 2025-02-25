@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
@@ -7,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { Mail, Phone, User, Plus, Trash2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Student {
   name: string;
@@ -47,12 +47,54 @@ const Signup = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const baseUrl = "https://buy.stripe.com/5kA17652s7Ui1uEcMM";
-    const quantity = students.length;
-    const finalUrl = `${baseUrl}#quantity=${quantity}`;
-    window.location.href = finalUrl;
+    setIsLoading(true);
+
+    try {
+      // Insert registration data
+      const { data: registration, error: registrationError } = await supabase
+        .from('registrations')
+        .insert({
+          registration_type: isAdultSignup ? 'adult' : 'parent',
+          parent_name: isAdultSignup ? students[0].name : formData.parentName,
+          email: formData.email,
+          phone: formData.phone,
+        })
+        .select()
+        .single();
+
+      if (registrationError) throw registrationError;
+
+      // Insert student information
+      const studentsToInsert = students.map(student => ({
+        registration_id: registration.id,
+        name: student.name,
+        age: parseInt(student.age),
+      }));
+
+      const { error: studentsError } = await supabase
+        .from('registration_students')
+        .insert(studentsToInsert);
+
+      if (studentsError) throw studentsError;
+
+      // Redirect to Stripe payment
+      const baseUrl = "https://buy.stripe.com/5kA17652s7Ui1uEcMM";
+      const quantity = students.length;
+      const finalUrl = `${baseUrl}#quantity=${quantity}`;
+      window.location.href = finalUrl;
+
+    } catch (error) {
+      console.error('Error saving registration:', error);
+      toast({
+        title: "Registration Error",
+        description: "There was a problem saving your registration. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
