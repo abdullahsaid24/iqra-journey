@@ -1,5 +1,5 @@
 
-import { serve } from 'https://deno.fresh.dev/server/mod.ts';
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import Stripe from 'https://esm.sh/stripe@14.20.0?target=deno';
 
 const corsHeaders = {
@@ -8,6 +8,7 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
@@ -46,6 +47,7 @@ serve(async (req) => {
       },
     );
   } catch (error) {
+    console.error('Stripe session creation error:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
       {
