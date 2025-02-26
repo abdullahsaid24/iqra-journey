@@ -21,6 +21,10 @@ serve(async (req) => {
 
     const { studentCount, email, successUrl, cancelUrl, registrationId } = await req.json();
 
+    // Append success parameter to the success URL
+    const finalSuccessUrl = `${successUrl}?success=true`;
+    const finalCancelUrl = `${successUrl}?success=false`;
+
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       line_items: [{
@@ -28,8 +32,8 @@ serve(async (req) => {
         quantity: studentCount,
       }],
       customer_email: email,
-      success_url: successUrl,
-      cancel_url: cancelUrl,
+      success_url: finalSuccessUrl,
+      cancel_url: finalCancelUrl,
       metadata: {
         registration_id: registrationId,
       },
