@@ -96,17 +96,34 @@ const Signup = () => {
         throw studentsError;
       }
 
+      // Create Stripe checkout session
+      const { data: checkoutData, error: checkoutError } = await supabase.functions.invoke('create-checkout-session', {
+        body: {
+          studentCount: students.length,
+          email: formData.email,
+          successUrl: `${window.location.origin}/success`,
+          cancelUrl: `${window.location.origin}/signup`,
+          registrationId: registration.id
+        }
+      });
+
+      if (checkoutError) {
+        console.error('Checkout error:', checkoutError);
+        throw checkoutError;
+      }
+
+      if (!checkoutData?.url) {
+        throw new Error('Checkout URL not returned');
+      }
+
       // Show success message
       toast({
         title: "Registration Successful",
         description: "Redirecting to payment...",
       });
 
-      // Redirect to Stripe payment
-      const baseUrl = "https://buy.stripe.com/5kA17652s7Ui1uEcMM";
-      const quantity = students.length;
-      const finalUrl = `${baseUrl}#quantity=${quantity}`;
-      window.location.href = finalUrl;
+      // Redirect to Stripe Checkout
+      window.location.href = checkoutData.url;
 
     } catch (error) {
       console.error('Error saving registration:', error);
