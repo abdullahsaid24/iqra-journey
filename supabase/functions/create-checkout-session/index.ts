@@ -23,7 +23,7 @@ serve(async (req) => {
 
     // Append success parameter to the success URL
     const finalSuccessUrl = `${successUrl}?success=true`;
-    const finalCancelUrl = `${successUrl}?success=false`;
+    const finalCancelUrl = `${cancelUrl}?success=false`;
 
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
