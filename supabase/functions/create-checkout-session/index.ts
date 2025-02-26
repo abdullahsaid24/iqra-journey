@@ -24,7 +24,7 @@ serve(async (req) => {
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       line_items: [{
-        price: 'price_12345', // Replace with your actual price ID
+        price: 'price_1QwZucA8IKyf1ukT9pkk9L3c',
         quantity: studentCount,
       }],
       customer_email: email,
