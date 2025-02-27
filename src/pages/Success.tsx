@@ -4,14 +4,13 @@ import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { Check, AlertTriangle } from "lucide-react";
 
 const Success = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const location = useLocation();
-  const { toast } = useToast();
   
   // Check for success in the search parameter
   const [isSuccess, setIsSuccess] = useState(false);
@@ -34,18 +33,15 @@ const Success = () => {
 
     // Show appropriate toast based on success status
     if (isSuccessful) {
-      toast({
-        title: "Registration Complete",
-        description: "Thank you for registering! We'll be in touch soon.",
+      toast.success("Registration Complete", {
+        description: "Thank you for registering! We'll be in touch soon."
       });
     } else {
-      toast({
-        title: "Registration Incomplete",
-        description: "There was an issue with your registration. Please try again.",
-        variant: "destructive",
+      toast.error("Registration Incomplete", {
+        description: "There was an issue with your registration. Please try again."
       });
     }
-  }, [searchParams, location, toast]);
+  }, [searchParams, location]);
 
   if (!isSuccess) {
     return (
