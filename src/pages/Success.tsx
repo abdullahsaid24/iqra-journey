@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -10,11 +10,26 @@ import { Check, AlertTriangle } from "lucide-react";
 const Success = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const location = useLocation();
   const { toast } = useToast();
-  const [isSuccess] = useState(() => searchParams.get("success") === "true");
-
+  
+  // Check for success in the search parameter
+  const [isSuccess, setIsSuccess] = useState(false);
+  
   useEffect(() => {
-    if (isSuccess) {
+    // Check if success parameter exists and is set to true
+    const successParam = searchParams.get("success");
+    const isSuccessful = successParam === "true";
+    setIsSuccess(isSuccessful);
+    
+    console.log("Success page loaded", { 
+      path: location.pathname,
+      search: location.search,
+      successParam,
+      isSuccessful
+    });
+
+    if (isSuccessful) {
       toast({
         title: "Registration Complete",
         description: "Thank you for registering! We'll be in touch soon.",
@@ -26,7 +41,7 @@ const Success = () => {
         variant: "destructive",
       });
     }
-  }, [toast, isSuccess]);
+  }, [toast, searchParams, location]);
 
   if (!isSuccess) {
     return (

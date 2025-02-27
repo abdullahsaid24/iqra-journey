@@ -16,9 +16,10 @@ const App = () => {
         <Route path="/about" element={<About />} />
         <Route path="/classes" element={<Classes />} />
         <Route path="/signup" element={<Signup />} />
+        {/* Handle all possible success route patterns */}
         <Route path="/success" element={<Success />} />
-        {/* Handle potential path variations that might lead to 404 */}
         <Route path="/success/" element={<Success />} />
+        <Route path="/success/success=:status" element={<Success />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       <Toaster />
