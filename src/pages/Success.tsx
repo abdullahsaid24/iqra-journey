@@ -17,18 +17,22 @@ const Success = () => {
   const [isSuccess, setIsSuccess] = useState(false);
   
   useEffect(() => {
-    // Check if success parameter exists and is set to true
+    // Get the success parameter from the URL
     const successParam = searchParams.get("success");
     const isSuccessful = successParam === "true";
-    setIsSuccess(isSuccessful);
     
     console.log("Success page loaded", { 
       path: location.pathname,
       search: location.search,
       successParam,
-      isSuccessful
+      isSuccessful,
+      fullUrl: window.location.href
     });
 
+    // Set the state based on the parameter
+    setIsSuccess(isSuccessful);
+
+    // Show appropriate toast based on success status
     if (isSuccessful) {
       toast({
         title: "Registration Complete",
@@ -41,7 +45,7 @@ const Success = () => {
         variant: "destructive",
       });
     }
-  }, [toast, searchParams, location]);
+  }, [searchParams, location, toast]);
 
   if (!isSuccess) {
     return (
