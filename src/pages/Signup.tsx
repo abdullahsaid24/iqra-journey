@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
@@ -96,8 +97,8 @@ const Signup = () => {
         body: {
           studentCount: students.length,
           email: formData.email,
-          successUrl: `${window.location.origin}/success`,
-          cancelUrl: `${window.location.origin}/signup`,
+          successUrl: `${window.location.origin}/success?success=true`,
+          cancelUrl: `${window.location.origin}/success?success=false`,
           registrationId: registration.id
         }
       });
