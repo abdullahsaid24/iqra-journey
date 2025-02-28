@@ -18,12 +18,20 @@ const Success = () => {
   useEffect(() => {
     // Get the success parameter from the URL
     const successParam = searchParams.get("success");
-    const isSuccessful = successParam === "true";
+    
+    // If no success parameter, check if the path itself indicates success
+    // This handles cases where query params might be lost
+    const pathIndicatesSuccess = location.pathname === "/success" || 
+                                location.pathname === "/success/" || 
+                                location.pathname.includes("/succes");
+    
+    const isSuccessful = successParam === "true" || (successParam === null && pathIndicatesSuccess);
     
     console.log("Success page loaded", { 
       path: location.pathname,
       search: location.search,
       successParam,
+      pathIndicatesSuccess,
       isSuccessful,
       fullUrl: window.location.href
     });

@@ -21,9 +21,14 @@ serve(async (req) => {
 
     const { studentCount, email, successUrl, cancelUrl, registrationId } = await req.json();
 
-    // Append success parameter to the success URL
-    const finalSuccessUrl = `${successUrl}?success=true`;
-    const finalCancelUrl = `${cancelUrl}?success=false`;
+    // Make sure URLs are properly encoded
+    const finalSuccessUrl = encodeURI(successUrl);
+    const finalCancelUrl = encodeURI(cancelUrl);
+
+    console.log("Creating checkout session with URLs:", {
+      successUrl: finalSuccessUrl,
+      cancelUrl: finalCancelUrl
+    });
 
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
@@ -42,6 +47,8 @@ serve(async (req) => {
         proration_behavior: 'none',
       },
     });
+
+    console.log("Checkout session created, redirecting to:", session.url);
 
     return new Response(
       JSON.stringify({ url: session.url }),
