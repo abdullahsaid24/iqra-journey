@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
@@ -63,17 +62,24 @@ const Signup = () => {
         email: formData.email,
         phone: formData.phone
       };
+      
+      console.log("Submitting registration data:", registrationData);
+      
       const {
         data: registration,
         error: registrationError
       } = await supabase.from('registrations').insert(registrationData).select().single();
+      
       if (registrationError) {
         console.error('Registration error:', registrationError);
-        throw registrationError;
+        throw new Error(`Registration failed: ${registrationError.message}`);
       }
+      
       if (!registration?.id) {
         throw new Error('Registration ID not returned');
       }
+
+      console.log("Registration successful:", registration);
 
       // Insert student information
       const studentsToInsert: RegistrationStudent[] = students.map(student => ({
@@ -81,31 +87,45 @@ const Signup = () => {
         name: student.name,
         age: parseInt(student.age)
       }));
+      
+      console.log("Inserting students:", studentsToInsert);
+      
       const {
         error: studentsError
       } = await supabase.from('registration_students').insert(studentsToInsert);
+      
       if (studentsError) {
         console.error('Students registration error:', studentsError);
-        throw studentsError;
+        throw new Error(`Student registration failed: ${studentsError.message}`);
       }
 
+      console.log("Students registered successfully");
+
       // Create Stripe checkout session
+      const checkoutPayload = {
+        studentCount: students.length,
+        email: formData.email,
+        successUrl: `${window.location.origin}/success?success=true`,
+        cancelUrl: `${window.location.origin}/success?success=false`,
+        registrationId: registration.id
+      };
+      
+      console.log("Creating checkout session with payload:", checkoutPayload);
+      
       const {
         data: checkoutData,
         error: checkoutError
       } = await supabase.functions.invoke('create-checkout-session', {
-        body: {
-          studentCount: students.length,
-          email: formData.email,
-          successUrl: `${window.location.origin}/success?success=true`,
-          cancelUrl: `${window.location.origin}/success?success=false`,
-          registrationId: registration.id
-        }
+        body: checkoutPayload
       });
+      
+      console.log("Checkout response:", { data: checkoutData, error: checkoutError });
+      
       if (checkoutError) {
         console.error('Checkout error:', checkoutError);
-        throw checkoutError;
+        throw new Error(`Checkout failed: ${checkoutError.message}`);
       }
+      
       if (!checkoutData?.url) {
         throw new Error('Checkout URL not returned');
       }
@@ -117,18 +137,20 @@ const Signup = () => {
       });
 
       // Redirect to Stripe Checkout
+      console.log("Redirecting to checkout URL:", checkoutData.url);
       window.location.href = checkoutData.url;
     } catch (error) {
-      console.error('Error saving registration:', error);
+      console.error('Error in registration process:', error);
       toast({
         title: "Registration Error",
-        description: "There was a problem saving your registration. Please try again.",
+        description: error.message || "There was a problem saving your registration. Please try again.",
         variant: "destructive"
       });
     } finally {
       setIsLoading(false);
     }
   };
+  
   return <div className="min-h-screen flex flex-col">
       <Navigation />
 
