@@ -25,9 +25,33 @@ serve(async (req) => {
     const finalSuccessUrl = encodeURI(successUrl);
     const finalCancelUrl = encodeURI(cancelUrl);
 
-    console.log("Creating checkout session with URLs:", {
+    // Determine billing cycle anchor based on current date
+    const today = new Date();
+    const currentDay = today.getDate();
+    const currentMonth = today.getMonth(); // 0-indexed (0 = January)
+    const currentYear = today.getFullYear();
+    
+    let billingCycleAnchorDate;
+    
+    if (currentDay < 15) {
+      // Before the 15th - bill for the current month (1st of current month)
+      billingCycleAnchorDate = new Date(currentYear, currentMonth, 1);
+    } else {
+      // On or after the 15th - bill for the next month (1st of next month)
+      billingCycleAnchorDate = new Date(currentYear, currentMonth + 1, 1);
+    }
+    
+    // Convert to Unix timestamp (seconds)
+    const billingCycleAnchor = Math.floor(billingCycleAnchorDate.getTime() / 1000);
+
+    console.log("Creating checkout session with billing details:", {
       successUrl: finalSuccessUrl,
-      cancelUrl: finalCancelUrl
+      cancelUrl: finalCancelUrl,
+      currentDate: today.toISOString(),
+      billingCycleAnchorDate: billingCycleAnchorDate.toISOString(),
+      billingCycleAnchor,
+      currentDay,
+      studentCount
     });
 
     const session = await stripe.checkout.sessions.create({
@@ -43,7 +67,7 @@ serve(async (req) => {
         registration_id: registrationId,
       },
       subscription_data: {
-        billing_cycle_anchor: Math.floor(new Date('2025-03-01T00:00:00Z').getTime() / 1000),
+        billing_cycle_anchor: billingCycleAnchor,
         proration_behavior: 'none',
       },
     });
