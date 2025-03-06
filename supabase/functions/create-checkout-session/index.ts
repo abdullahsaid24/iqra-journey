@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import Stripe from 'https://esm.sh/stripe@14.20.0?target=deno';
 
@@ -56,20 +55,30 @@ serve(async (req) => {
       httpClient: Stripe.createFetchHttpClient(),
     });
 
-    // Make sure URLs are properly encoded
-    const finalSuccessUrl = successUrl;
-    const finalCancelUrl = cancelUrl;
+    // Calculate billing cycle anchor for first of next month
+    const now = new Date();
+    let billingCycleAnchor: number;
+    
+    // If today is the 1st of the month, bill immediately
+    // Otherwise, set billing to begin on the 1st of next month
+    if (now.getDate() === 1) {
+      console.log("Today is the 1st of the month, billing starts immediately");
+      billingCycleAnchor = Math.floor(now.getTime() / 1000); // Current time in seconds
+    } else {
+      // Set to 1st of next month
+      const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+      billingCycleAnchor = Math.floor(nextMonth.getTime() / 1000);
+      console.log("Setting billing_cycle_anchor to 1st of next month:", new Date(billingCycleAnchor * 1000).toISOString());
+    }
 
-    // Use a simplified billing cycle approach
-    // Always bill from the current date
-    // This avoids date calculation issues
     console.log("Creating checkout session with billing details:", {
-      successUrl: finalSuccessUrl,
-      cancelUrl: finalCancelUrl,
-      studentCount
+      successUrl,
+      cancelUrl,
+      studentCount,
+      billingCycleAnchor: new Date(billingCycleAnchor * 1000).toISOString()
     });
 
-    // Create Stripe checkout session without billing_cycle_anchor
+    // Create Stripe checkout session with billing_cycle_anchor set to 1st of next month
     try {
       const session = await stripe.checkout.sessions.create({
         mode: 'subscription',
@@ -78,10 +87,14 @@ serve(async (req) => {
           quantity: studentCount,
         }],
         customer_email: email,
-        success_url: finalSuccessUrl,
-        cancel_url: finalCancelUrl,
+        success_url: successUrl,
+        cancel_url: cancelUrl,
         metadata: {
           registration_id: registrationId,
+        },
+        subscription_data: {
+          billing_cycle_anchor: billingCycleAnchor,
+          proration_behavior: 'none',
         },
       });
 
