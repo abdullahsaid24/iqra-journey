@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import Stripe from 'https://esm.sh/stripe@14.20.0?target=deno';
 
@@ -17,7 +18,7 @@ serve(async (req) => {
     const requestData = await req.json();
     console.log("Received request data:", JSON.stringify(requestData));
 
-    const { studentCount, email, successUrl, cancelUrl, registrationId } = requestData;
+    const { studentCount, email, phone, successUrl, cancelUrl, registrationId } = requestData;
 
     // Validate required parameters
     if (!studentCount || !email || !successUrl || !cancelUrl || !registrationId) {
@@ -75,6 +76,8 @@ serve(async (req) => {
       successUrl,
       cancelUrl,
       studentCount,
+      email,
+      phone: phone || 'Not provided',
       billingCycleAnchor: new Date(billingCycleAnchor * 1000).toISOString()
     });
 
@@ -96,6 +99,11 @@ serve(async (req) => {
           billing_cycle_anchor: billingCycleAnchor,
           proration_behavior: 'none',
         },
+        customer_creation: 'always',
+        phone_number_collection: {
+          enabled: true,
+        },
+        payment_method_collection: 'always',
       });
 
       console.log("Checkout session created successfully:", {
