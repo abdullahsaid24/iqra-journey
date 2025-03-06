@@ -67,7 +67,6 @@ const Signup = () => {
         const checkoutPayload = {
           studentCount: students.length,
           email: formData.email,
-          phone: formData.phone,
           successUrl: `${window.location.origin}/success?success=true`,
           cancelUrl: `${window.location.origin}/success?success=false`,
           registrationId: registrationId
