@@ -57,39 +57,19 @@ serve(async (req) => {
     });
 
     // Make sure URLs are properly encoded
-    const finalSuccessUrl = encodeURI(successUrl);
-    const finalCancelUrl = encodeURI(cancelUrl);
+    const finalSuccessUrl = successUrl;
+    const finalCancelUrl = cancelUrl;
 
-    // Determine billing cycle anchor based on current date
-    const today = new Date();
-    const currentDay = today.getDate();
-    const currentMonth = today.getMonth(); // 0-indexed (0 = January)
-    const currentYear = today.getFullYear();
-    
-    let billingCycleAnchorDate;
-    
-    if (currentDay < 15) {
-      // Before the 15th - bill for the current month (1st of current month)
-      billingCycleAnchorDate = new Date(currentYear, currentMonth, 1);
-    } else {
-      // On or after the 15th - bill for the next month (1st of next month)
-      billingCycleAnchorDate = new Date(currentYear, currentMonth + 1, 1);
-    }
-    
-    // Convert to Unix timestamp (seconds)
-    const billingCycleAnchor = Math.floor(billingCycleAnchorDate.getTime() / 1000);
-
+    // Use a simplified billing cycle approach
+    // Always bill from the current date
+    // This avoids date calculation issues
     console.log("Creating checkout session with billing details:", {
       successUrl: finalSuccessUrl,
       cancelUrl: finalCancelUrl,
-      currentDate: today.toISOString(),
-      billingCycleAnchorDate: billingCycleAnchorDate.toISOString(),
-      billingCycleAnchor,
-      currentDay,
       studentCount
     });
 
-    // Create Stripe checkout session
+    // Create Stripe checkout session without billing_cycle_anchor
     try {
       const session = await stripe.checkout.sessions.create({
         mode: 'subscription',
@@ -102,10 +82,6 @@ serve(async (req) => {
         cancel_url: finalCancelUrl,
         metadata: {
           registration_id: registrationId,
-        },
-        subscription_data: {
-          billing_cycle_anchor: billingCycleAnchor,
-          proration_behavior: 'none',
         },
       });
 
@@ -122,11 +98,13 @@ serve(async (req) => {
         },
       );
     } catch (stripeError) {
+      // Log detailed Stripe error information
       console.error('Stripe API error:', {
         error: stripeError.message,
         type: stripeError.type,
         code: stripeError.code,
-        params: stripeError.param
+        params: stripeError.param,
+        stack: stripeError.stack
       });
       
       return new Response(
@@ -142,10 +120,12 @@ serve(async (req) => {
       );
     }
   } catch (error) {
+    // Log detailed general error information
     console.error('General error:', {
       message: error.message,
       stack: error.stack,
-      name: error.name
+      name: error.name,
+      object: JSON.stringify(error)
     });
     
     return new Response(

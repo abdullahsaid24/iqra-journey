@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
@@ -8,16 +9,18 @@ import { useToast } from "@/components/ui/use-toast";
 import { Mail, Phone, User, Plus, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
+import { useNavigate } from "react-router-dom";
+
 interface Student {
   name: string;
   age: string;
 }
 type Registration = Database['public']['Tables']['registrations']['Insert'];
 type RegistrationStudent = Database['public']['Tables']['registration_students']['Insert'];
+
 const Signup = () => {
-  const {
-    toast
-  } = useToast();
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [isAdultSignup, setIsAdultSignup] = useState(false);
   const [students, setStudents] = useState<Student[]>([{
@@ -29,31 +32,101 @@ const Signup = () => {
     email: "",
     phone: ""
   });
+
   const handleParentInfoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
     });
   };
+
   const handleStudentChange = (index: number, field: keyof Student, value: string) => {
     const newStudents = [...students];
     newStudents[index][field] = value;
     setStudents(newStudents);
   };
+
   const addStudent = () => {
     setStudents([...students, {
       name: "",
       age: ""
     }]);
   };
+
   const removeStudent = (index: number) => {
     if (students.length > 1) {
       setStudents(students.filter((_, i) => i !== index));
     }
   };
+
+  const createCheckoutSession = async (registrationId: string, maxRetries = 2) => {
+    let retries = 0;
+    
+    const tryCheckout = async () => {
+      try {
+        const checkoutPayload = {
+          studentCount: students.length,
+          email: formData.email,
+          successUrl: `${window.location.origin}/success?success=true`,
+          cancelUrl: `${window.location.origin}/success?success=false`,
+          registrationId: registrationId
+        };
+        
+        console.log("Creating checkout session with payload:", checkoutPayload);
+        
+        const { data: checkoutData, error: checkoutError } = await supabase.functions.invoke('create-checkout-session', {
+          body: checkoutPayload
+        });
+        
+        console.log("Checkout response:", { data: checkoutData, error: checkoutError });
+        
+        if (checkoutError) {
+          console.error('Checkout error:', checkoutError);
+          throw new Error(`Checkout failed: ${checkoutError.message || "Unknown error"}`);
+        }
+        
+        if (!checkoutData?.url) {
+          throw new Error('Checkout URL not returned');
+        }
+
+        // Show success message
+        toast({
+          title: "Registration Successful",
+          description: "Redirecting to payment..."
+        });
+
+        // Redirect to Stripe Checkout
+        console.log("Redirecting to checkout URL:", checkoutData.url);
+        window.location.href = checkoutData.url;
+        
+      } catch (error) {
+        console.error('Error in checkout process:', error);
+        
+        if (retries < maxRetries) {
+          retries++;
+          console.log(`Retry attempt ${retries}/${maxRetries}...`);
+          await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second before retrying
+          return tryCheckout();
+        }
+        
+        toast({
+          title: "Payment Setup Error",
+          description: `There was a problem setting up the payment: ${error.message}. Please try again.`,
+          variant: "destructive"
+        });
+        
+        // Navigate to a fallback page if payment setup fails
+        navigate("/success?success=false");
+      }
+    };
+    
+    return tryCheckout();
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    
     try {
       // Insert registration data
       const registrationData: Registration = {
@@ -65,10 +138,11 @@ const Signup = () => {
       
       console.log("Submitting registration data:", registrationData);
       
-      const {
-        data: registration,
-        error: registrationError
-      } = await supabase.from('registrations').insert(registrationData).select().single();
+      const { data: registration, error: registrationError } = await supabase
+        .from('registrations')
+        .insert(registrationData)
+        .select()
+        .single();
       
       if (registrationError) {
         console.error('Registration error:', registrationError);
@@ -90,9 +164,9 @@ const Signup = () => {
       
       console.log("Inserting students:", studentsToInsert);
       
-      const {
-        error: studentsError
-      } = await supabase.from('registration_students').insert(studentsToInsert);
+      const { error: studentsError } = await supabase
+        .from('registration_students')
+        .insert(studentsToInsert);
       
       if (studentsError) {
         console.error('Students registration error:', studentsError);
@@ -100,45 +174,10 @@ const Signup = () => {
       }
 
       console.log("Students registered successfully");
-
-      // Create Stripe checkout session
-      const checkoutPayload = {
-        studentCount: students.length,
-        email: formData.email,
-        successUrl: `${window.location.origin}/success?success=true`,
-        cancelUrl: `${window.location.origin}/success?success=false`,
-        registrationId: registration.id
-      };
       
-      console.log("Creating checkout session with payload:", checkoutPayload);
+      // Create Stripe checkout session with retry logic
+      await createCheckoutSession(registration.id);
       
-      const {
-        data: checkoutData,
-        error: checkoutError
-      } = await supabase.functions.invoke('create-checkout-session', {
-        body: checkoutPayload
-      });
-      
-      console.log("Checkout response:", { data: checkoutData, error: checkoutError });
-      
-      if (checkoutError) {
-        console.error('Checkout error:', checkoutError);
-        throw new Error(`Checkout failed: ${checkoutError.message}`);
-      }
-      
-      if (!checkoutData?.url) {
-        throw new Error('Checkout URL not returned');
-      }
-
-      // Show success message
-      toast({
-        title: "Registration Successful",
-        description: "Redirecting to payment..."
-      });
-
-      // Redirect to Stripe Checkout
-      console.log("Redirecting to checkout URL:", checkoutData.url);
-      window.location.href = checkoutData.url;
     } catch (error) {
       console.error('Error in registration process:', error);
       toast({
@@ -146,7 +185,6 @@ const Signup = () => {
         description: error.message || "There was a problem saving your registration. Please try again.",
         variant: "destructive"
       });
-    } finally {
       setIsLoading(false);
     }
   };
@@ -284,4 +322,5 @@ const Signup = () => {
       <Footer />
     </div>;
 };
+
 export default Signup;

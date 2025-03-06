@@ -23,7 +23,7 @@ const Success = () => {
     // This handles cases where query params might be lost
     const pathIndicatesSuccess = location.pathname === "/success" || 
                                 location.pathname === "/success/" || 
-                                location.pathname.includes("/succes");
+                                location.pathname.includes("/success");
     
     const isSuccessful = successParam === "true" || (successParam === null && pathIndicatesSuccess);
     
