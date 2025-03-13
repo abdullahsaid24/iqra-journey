@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import Stripe from 'https://esm.sh/stripe@14.20.0?target=deno';
 
@@ -170,6 +169,57 @@ serve(async (req) => {
         
         console.log(`Updated registration ${registrationId} status to ${isActive ? 'active' : 'inactive'}`);
         
+        // Update or insert entry in user_subscriptions table
+        const subscriptionResponse = await fetch(`${supabaseUrl}/rest/v1/user_subscriptions?user_id=eq.${registrationId}&select=id`, {
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': supabaseKey,
+            'Authorization': `Bearer ${supabaseKey}`,
+          },
+        });
+        
+        const subscriptions = await subscriptionResponse.json();
+        
+        if (subscriptions.length > 0) {
+          // Update existing subscription
+          await fetch(`${supabaseUrl}/rest/v1/user_subscriptions?id=eq.${subscriptions[0].id}`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+              'apikey': supabaseKey,
+              'Authorization': `Bearer ${supabaseKey}`,
+              'Prefer': 'return=minimal',
+            },
+            body: JSON.stringify({
+              is_active: isActive,
+              stripe_customer_id: subscription.customer,
+              stripe_subscription_id: subscription.id,
+              updated_at: new Date().toISOString(),
+            }),
+          });
+          
+          console.log(`Updated subscription record for ${email}`);
+        } else {
+          // Insert new subscription
+          await fetch(`${supabaseUrl}/rest/v1/user_subscriptions`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'apikey': supabaseKey,
+              'Authorization': `Bearer ${supabaseKey}`,
+              'Prefer': 'return=minimal',
+            },
+            body: JSON.stringify({
+              user_id: registrationId,
+              is_active: isActive,
+              stripe_customer_id: subscription.customer,
+              stripe_subscription_id: subscription.id,
+            }),
+          });
+          
+          console.log(`Created new subscription record for ${email}`);
+        }
+        
         break;
       }
       
@@ -236,6 +286,23 @@ serve(async (req) => {
         });
         
         console.log(`Updated registration ${registrationId} status to inactive`);
+        
+        // Update user_subscriptions table
+        await fetch(`${supabaseUrl}/rest/v1/user_subscriptions?user_id=eq.${registrationId}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': supabaseKey,
+            'Authorization': `Bearer ${supabaseKey}`,
+            'Prefer': 'return=minimal',
+          },
+          body: JSON.stringify({
+            is_active: false,
+            updated_at: new Date().toISOString(),
+          }),
+        });
+        
+        console.log(`Updated user_subscription for ${email} to inactive`);
         
         break;
       }
@@ -330,6 +397,7 @@ async function handleManualSync(stripe: Stripe, supabaseUrl: string, supabaseKey
     // 3. Update registrations based on Stripe status
     const updates = [];
     let updatedCount = 0;
+    let subscriptionCount = 0;
     
     for (const [email, registration] of registrationsByEmail.entries()) {
       const stripeInfo = activeEmailMap.get(email);
@@ -339,6 +407,7 @@ async function handleManualSync(stripe: Stripe, supabaseUrl: string, supabaseKey
       if (needsUpdate) {
         console.log(`Updating registration for ${email}: setting to active/paid`);
         
+        // Update registration status
         const updateResponse = await fetch(
           `${supabaseUrl}/rest/v1/registrations?id=eq.${registration.id}`,
           {
@@ -363,6 +432,67 @@ async function handleManualSync(stripe: Stripe, supabaseUrl: string, supabaseKey
             id: registration.id,
             status: 'updated to active'
           });
+          
+          // Now check if we need to update user_subscriptions
+          const subscriptionResponse = await fetch(
+            `${supabaseUrl}/rest/v1/user_subscriptions?user_id=eq.${registration.id}&select=id`,
+            {
+              headers: {
+                'Content-Type': 'application/json',
+                'apikey': supabaseKey,
+                'Authorization': `Bearer ${supabaseKey}`,
+              },
+            }
+          );
+          
+          const subscriptions = await subscriptionResponse.json();
+          
+          if (subscriptions.length > 0) {
+            // Update existing subscription
+            await fetch(
+              `${supabaseUrl}/rest/v1/user_subscriptions?id=eq.${subscriptions[0].id}`,
+              {
+                method: 'PATCH',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'apikey': supabaseKey,
+                  'Authorization': `Bearer ${supabaseKey}`,
+                  'Prefer': 'return=minimal',
+                },
+                body: JSON.stringify({
+                  is_active: true,
+                  stripe_customer_id: stripeInfo.customerId,
+                  stripe_subscription_id: stripeInfo.subscriptionId,
+                  updated_at: new Date().toISOString(),
+                }),
+              }
+            );
+            
+            console.log(`Updated subscription for ${email}`);
+          } else {
+            // Create new subscription
+            await fetch(
+              `${supabaseUrl}/rest/v1/user_subscriptions`,
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'apikey': supabaseKey,
+                  'Authorization': `Bearer ${supabaseKey}`,
+                  'Prefer': 'return=minimal',
+                },
+                body: JSON.stringify({
+                  user_id: registration.id,
+                  is_active: true,
+                  stripe_customer_id: stripeInfo.customerId,
+                  stripe_subscription_id: stripeInfo.subscriptionId,
+                }),
+              }
+            );
+            
+            subscriptionCount++;
+            console.log(`Created subscription for ${email}`);
+          }
         } else {
           console.error(`Failed to update registration ${registration.id}: ${updateResponse.statusText}`);
           updates.push({
@@ -374,12 +504,12 @@ async function handleManualSync(stripe: Stripe, supabaseUrl: string, supabaseKey
       }
     }
     
-    console.log(`Sync complete. Updated ${updatedCount} registrations.`);
+    console.log(`Sync complete. Updated ${updatedCount} registrations and ${subscriptionCount} subscriptions.`);
     
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: `Synchronized ${updatedCount} registrations with Stripe`,
+        message: `Synchronized ${updatedCount} registrations with Stripe, created/updated ${subscriptionCount} subscriptions`,
         updates
       }),
       {

@@ -7,13 +7,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/components/ui/use-toast";
 import { Loader2 } from "lucide-react";
-import { syncRegistrationsWithStripe, forceUpdateRegistrationStatus } from "@/integrations/supabase/client";
+import { 
+  syncRegistrationsWithStripe, 
+  forceUpdateRegistrationStatus, 
+  createUserSubscriptions 
+} from "@/integrations/supabase/client";
 
 const Admin = () => {
   const [isSyncing, setIsSyncing] = useState(false);
   const [isForcing, setIsForcing] = useState(false);
+  const [isCreatingSubscriptions, setIsCreatingSubscriptions] = useState(false);
   const [syncResult, setSyncResult] = useState<any>(null);
   const [forceResult, setForceResult] = useState<any>(null);
+  const [subscriptionResult, setSubscriptionResult] = useState<any>(null);
 
   // List of emails that need to be fixed
   const paidEmails = [
@@ -100,6 +106,37 @@ const Admin = () => {
     }
   };
 
+  const handleCreateSubscriptions = async () => {
+    setIsCreatingSubscriptions(true);
+    setSubscriptionResult(null);
+    
+    try {
+      const result = await createUserSubscriptions();
+      setSubscriptionResult(result);
+      
+      if (result.success) {
+        toast({
+          title: "Subscription Creation Complete",
+          description: `Created: ${result.created}, Already Existing: ${result.existing}, Errors: ${result.errors}`,
+        });
+      } else {
+        toast({
+          title: "Subscription Creation Failed",
+          description: `Error: ${result.error?.message || "Unknown error"}`,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Subscription Creation Failed",
+        description: `Error: ${error.message || "Unknown error"}`,
+        variant: "destructive",
+      });
+    } finally {
+      setIsCreatingSubscriptions(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navigation />
@@ -120,7 +157,7 @@ const Admin = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center flex-wrap">
                     <Button onClick={handleSyncWithStripe} disabled={isSyncing}>
                       {isSyncing ? (
                         <>
@@ -144,6 +181,21 @@ const Admin = () => {
                         </>
                       ) : (
                         "Force Update Paid Registrations"
+                      )}
+                    </Button>
+                    
+                    <Button 
+                      onClick={handleCreateSubscriptions} 
+                      disabled={isCreatingSubscriptions}
+                      variant="secondary"
+                    >
+                      {isCreatingSubscriptions ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Creating Subscriptions...
+                        </>
+                      ) : (
+                        "Create User Subscriptions"
                       )}
                     </Button>
                   </div>
@@ -178,6 +230,18 @@ const Admin = () => {
                         <h3 className="font-medium mb-2">Force Update Result:</h3>
                         <pre className="p-2 bg-muted rounded-md text-xs overflow-x-auto">
                           {JSON.stringify(forceResult, null, 2)}
+                        </pre>
+                      </div>
+                    </>
+                  )}
+                  
+                  {subscriptionResult && (
+                    <>
+                      <Separator className="my-4" />
+                      <div>
+                        <h3 className="font-medium mb-2">Subscription Creation Result:</h3>
+                        <pre className="p-2 bg-muted rounded-md text-xs overflow-x-auto">
+                          {JSON.stringify(subscriptionResult, null, 2)}
                         </pre>
                       </div>
                     </>
