@@ -4,9 +4,9 @@ import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/use-toast";
 import { Check, AlertTriangle } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, syncRegistrationsWithStripe } from "@/integrations/supabase/client";
 
 const Success = () => {
   const navigate = useNavigate();
@@ -44,8 +44,10 @@ const Success = () => {
 
     // Show appropriate toast based on success status
     if (isSuccessful) {
-      toast.success("Registration Complete", {
-        description: "Thank you for registering! We'll be in touch soon."
+      toast({
+        title: "Registration Complete",
+        description: "Thank you for registering! We'll be in touch soon.",
+        variant: "default",
       });
       
       // Optionally, update the registration status in Supabase
@@ -55,11 +57,31 @@ const Success = () => {
         updateRegistrationStatus(sessionId);
       }
     } else {
-      toast.error("Registration Incomplete", {
-        description: "There was an issue with your registration. Please try again."
+      toast({
+        title: "Registration Incomplete",
+        description: "There was an issue with your registration. Please try again.",
+        variant: "destructive",
       });
     }
+
+    // Try to sync registrations with Stripe to ensure all records are up-to-date
+    // This helps ensure our database is in sync with Stripe's records
+    syncRegistrations();
   }, [searchParams, location]);
+  
+  const syncRegistrations = async () => {
+    // Run the synchronization in the background
+    try {
+      const result = await syncRegistrationsWithStripe();
+      if (result.success) {
+        console.log('Successfully synchronized registrations with Stripe:', result.data);
+      } else {
+        console.error('Error synchronizing registrations:', result.error);
+      }
+    } catch (error) {
+      console.error('Exception during registration synchronization:', error);
+    }
+  };
   
   const updateRegistrationStatus = async (sessionId: string) => {
     try {

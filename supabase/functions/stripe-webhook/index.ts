@@ -30,7 +30,31 @@ serve(async (req) => {
       apiVersion: '2023-10-16',
       httpClient: Stripe.createFetchHttpClient(),
     });
+    
+    // Get the Supabase URL and service role key
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    
+    if (!supabaseUrl || !supabaseKey) {
+      console.error("Supabase credentials not configured");
+      return new Response(
+        JSON.stringify({ error: "Supabase configuration error" }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500,
+        }
+      );
+    }
 
+    // Check if this is a manual sync request
+    const isManualSync = req.headers.get('x-sync-registrations') === 'true';
+    
+    if (isManualSync) {
+      console.log("Starting manual sync of registrations with Stripe");
+      return await handleManualSync(stripe, supabaseUrl, supabaseKey);
+    }
+
+    // Regular webhook handling
     // Get the signature from the header
     const signature = req.headers.get('stripe-signature');
     if (!signature) {
@@ -77,21 +101,6 @@ serve(async (req) => {
 
     console.log(`Received Stripe event: ${event.type}`);
     
-    // Get the Supabase URL and service role key
-    const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    
-    if (!supabaseUrl || !supabaseKey) {
-      console.error("Supabase credentials not configured");
-      return new Response(
-        JSON.stringify({ error: "Supabase configuration error" }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 500,
-        }
-      );
-    }
-
     // Handle different event types
     switch (event.type) {
       case 'customer.subscription.created':
@@ -119,7 +128,7 @@ serve(async (req) => {
         }
         
         // First, find the user in registrations table by email
-        const registrationResponse = await fetch(`${supabaseUrl}/rest/v1/registrations?email=eq.${encodeURIComponent(email)}&select=id,email`, {
+        const registrationResponse = await fetch(`${supabaseUrl}/rest/v1/registrations?email=eq.${encodeURIComponent(email)}&order=created_at.desc&limit=1&select=id,email`, {
           headers: {
             'Content-Type': 'application/json',
             'apikey': supabaseKey,
@@ -188,7 +197,7 @@ serve(async (req) => {
         }
         
         // Find the user in registrations table by email
-        const registrationResponse = await fetch(`${supabaseUrl}/rest/v1/registrations?email=eq.${encodeURIComponent(email)}&select=id,email`, {
+        const registrationResponse = await fetch(`${supabaseUrl}/rest/v1/registrations?email=eq.${encodeURIComponent(email)}&order=created_at.desc&limit=1&select=id,email`, {
           headers: {
             'Content-Type': 'application/json',
             'apikey': supabaseKey,
@@ -256,3 +265,143 @@ serve(async (req) => {
     );
   }
 });
+
+// Function to handle manual synchronization of all registrations with Stripe
+async function handleManualSync(stripe: Stripe, supabaseUrl: string, supabaseKey: string) {
+  try {
+    console.log("Starting manual sync process");
+    const corsHeaders = {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+      'Content-Type': 'application/json'
+    };
+    
+    // 1. Get all customers from Stripe with active subscriptions
+    console.log("Fetching active subscriptions from Stripe");
+    const activeSubscriptions = await stripe.subscriptions.list({
+      status: 'active',
+      expand: ['data.customer']
+    });
+    
+    // Map of email to subscription status
+    const activeEmailMap = new Map();
+    
+    activeSubscriptions.data.forEach(subscription => {
+      const customer = subscription.customer as Stripe.Customer;
+      if (customer && customer.email) {
+        activeEmailMap.set(customer.email.toLowerCase(), {
+          status: 'active',
+          customerId: customer.id,
+          subscriptionId: subscription.id
+        });
+      }
+    });
+    
+    console.log(`Found ${activeEmailMap.size} active subscriptions in Stripe`);
+    
+    // 2. Get all registrations from database
+    console.log("Fetching registrations from database");
+    const registrationsResponse = await fetch(
+      `${supabaseUrl}/rest/v1/registrations?select=id,email,payment_status,status&order=created_at.desc`, 
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
+        },
+      }
+    );
+    
+    if (!registrationsResponse.ok) {
+      throw new Error(`Failed to fetch registrations: ${registrationsResponse.statusText}`);
+    }
+    
+    const registrations = await registrationsResponse.json();
+    console.log(`Found ${registrations.length} registrations in database`);
+    
+    // Group registrations by email to handle duplicates
+    const registrationsByEmail = new Map();
+    registrations.forEach(reg => {
+      if (!registrationsByEmail.has(reg.email.toLowerCase())) {
+        registrationsByEmail.set(reg.email.toLowerCase(), reg);
+      }
+    });
+    
+    // 3. Update registrations based on Stripe status
+    const updates = [];
+    let updatedCount = 0;
+    
+    for (const [email, registration] of registrationsByEmail.entries()) {
+      const stripeInfo = activeEmailMap.get(email);
+      const needsUpdate = stripeInfo && 
+        (registration.payment_status !== 'paid' || registration.status !== 'active');
+      
+      if (needsUpdate) {
+        console.log(`Updating registration for ${email}: setting to active/paid`);
+        
+        const updateResponse = await fetch(
+          `${supabaseUrl}/rest/v1/registrations?id=eq.${registration.id}`,
+          {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+              'apikey': supabaseKey,
+              'Authorization': `Bearer ${supabaseKey}`,
+              'Prefer': 'return=minimal',
+            },
+            body: JSON.stringify({
+              payment_status: 'paid',
+              status: 'active',
+            }),
+          }
+        );
+        
+        if (updateResponse.ok) {
+          updatedCount++;
+          updates.push({
+            email,
+            id: registration.id,
+            status: 'updated to active'
+          });
+        } else {
+          console.error(`Failed to update registration ${registration.id}: ${updateResponse.statusText}`);
+          updates.push({
+            email,
+            id: registration.id,
+            status: 'update failed'
+          });
+        }
+      }
+    }
+    
+    console.log(`Sync complete. Updated ${updatedCount} registrations.`);
+    
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        message: `Synchronized ${updatedCount} registrations with Stripe`,
+        updates
+      }),
+      {
+        headers: corsHeaders,
+        status: 200,
+      },
+    );
+  } catch (error) {
+    console.error(`Error during manual sync: ${error.message}`);
+    return new Response(
+      JSON.stringify({ 
+        error: "Sync failed", 
+        message: error.message 
+      }),
+      {
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+          'Content-Type': 'application/json'
+        },
+        status: 500,
+      },
+    );
+  }
+}
