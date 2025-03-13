@@ -85,19 +85,19 @@ const Index = () => {
 
       {showPaymentNotice && (
         <div className="fixed bottom-4 right-4 z-50">
-          <div className="bg-card rounded-lg shadow-lg border border-border/50 p-3 max-w-[280px] relative">
+          <div className="bg-card rounded-lg shadow-lg border border-border/50 p-2.5 max-w-[250px] relative">
             <button 
               onClick={() => setShowPaymentNotice(false)}
-              className="absolute top-1 right-1 text-muted-foreground hover:text-foreground p-1"
+              className="absolute top-1.5 right-1.5 text-muted-foreground hover:text-foreground p-0.5"
               aria-label="Close notification"
             >
-              <X className="h-4 w-4" />
+              <X className="h-3.5 w-3.5" />
             </button>
-            <h4 className="text-sm font-medium mb-1.5">Need to update your payment method?</h4>
-            <p className="text-xs text-muted-foreground mb-2.5">
+            <h4 className="text-xs font-medium mb-1 pr-5">Need to update your payment method?</h4>
+            <p className="text-xs text-muted-foreground mb-2 text-[11px]">
               Use the email you signed up with to access your billing portal.
             </p>
-            <Button asChild size="sm" className="w-full text-xs py-1">
+            <Button asChild size="sm" className="w-full text-xs py-0.5 h-7">
               <a 
                 href="https://billing.stripe.com/p/login/fZe5mSaqA5iB4I84gg" 
                 target="_blank" 
@@ -105,7 +105,7 @@ const Index = () => {
                 className="flex items-center justify-center"
               >
                 Update Payment Method
-                <ExternalLink className="ml-1.5 h-3 w-3" />
+                <ExternalLink className="ml-1 h-3 w-3" />
               </a>
             </Button>
           </div>
