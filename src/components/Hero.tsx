@@ -5,12 +5,12 @@ import { Button } from "@/components/ui/button";
 
 const Hero = () => {
   return (
-    <div className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
+    <div className="relative h-screen w-screen flex items-center justify-center overflow-hidden">
       <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1466442929976-97f336a657be')] bg-cover bg-center">
         <div className="absolute inset-0 bg-background/90 backdrop-blur-sm"></div>
       </div>
       
-      <div className="container relative px-4 py-32 animate-fade-in">
+      <div className="container relative px-4 animate-fade-in">
         <div className="max-w-3xl mx-auto text-center space-y-8">
           <h1 className="hero-title animate-slide-up">
             Welcome to Iqra Dugsi
