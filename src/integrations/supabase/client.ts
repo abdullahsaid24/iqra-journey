@@ -34,3 +34,60 @@ export const syncRegistrationsWithStripe = async () => {
     return { success: false, error: err };
   }
 };
+
+// Utility function to force update registration status 
+export const forceUpdateRegistrationStatus = async (emails: string[]) => {
+  if (!emails || emails.length === 0) {
+    return { success: false, error: 'No emails provided' };
+  }
+
+  try {
+    // For each email, find the latest registration and update its status
+    const promises = emails.map(async (email) => {
+      // First, get the latest registration for this email
+      const { data: registrations, error: fetchError } = await supabase
+        .from('registrations')
+        .select('id, email, payment_status, status')
+        .eq('email', email)
+        .order('created_at', { ascending: false })
+        .limit(1);
+      
+      if (fetchError || !registrations || registrations.length === 0) {
+        console.error(`No registration found for email: ${email}`);
+        return { email, status: 'not_found' };
+      }
+      
+      const registration = registrations[0];
+      
+      // Update the registration status
+      const { error: updateError } = await supabase
+        .from('registrations')
+        .update({ 
+          payment_status: 'paid',
+          status: 'active'
+        })
+        .eq('id', registration.id);
+      
+      if (updateError) {
+        console.error(`Error updating registration for ${email}:`, updateError);
+        return { email, status: 'error', error: updateError };
+      }
+      
+      return { email, status: 'updated' };
+    });
+    
+    const results = await Promise.all(promises);
+    console.log('Force update results:', results);
+    
+    return { 
+      success: true, 
+      results,
+      updated: results.filter(r => r.status === 'updated').length,
+      notFound: results.filter(r => r.status === 'not_found').length,
+      errors: results.filter(r => r.status === 'error').length
+    };
+  } catch (err) {
+    console.error('Exception in force update process:', err);
+    return { success: false, error: err };
+  }
+};
