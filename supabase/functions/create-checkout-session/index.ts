@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import Stripe from 'https://esm.sh/stripe@14.20.0?target=deno';
 
@@ -95,6 +96,9 @@ serve(async (req) => {
         subscription_data: {
           billing_cycle_anchor: billingCycleAnchor,
           proration_behavior: 'none',
+          metadata: {
+            registration_id: registrationId,
+          }
         },
       });
 

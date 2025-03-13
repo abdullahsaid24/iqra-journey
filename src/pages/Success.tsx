@@ -6,6 +6,7 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Check, AlertTriangle } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const Success = () => {
   const navigate = useNavigate();
@@ -14,6 +15,7 @@ const Success = () => {
   
   // Check for success in the search parameter
   const [isSuccess, setIsSuccess] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
     // Get the success parameter from the URL
@@ -38,18 +40,60 @@ const Success = () => {
 
     // Set the state based on the parameter
     setIsSuccess(isSuccessful);
+    setIsLoading(false);
 
     // Show appropriate toast based on success status
     if (isSuccessful) {
       toast.success("Registration Complete", {
         description: "Thank you for registering! We'll be in touch soon."
       });
+      
+      // Optionally, update the registration status in Supabase
+      // This is a backup in case the webhook hasn't processed yet
+      const sessionId = searchParams.get("session_id");
+      if (sessionId) {
+        updateRegistrationStatus(sessionId);
+      }
     } else {
       toast.error("Registration Incomplete", {
         description: "There was an issue with your registration. Please try again."
       });
     }
   }, [searchParams, location]);
+  
+  const updateRegistrationStatus = async (sessionId: string) => {
+    try {
+      // Call our Supabase edge function to check the session status
+      const { data, error } = await supabase.functions.invoke('stripe-webhook', {
+        body: { 
+          type: 'checkout.session.completed',
+          session_id: sessionId
+        }
+      });
+      
+      if (error) {
+        console.error('Error updating registration status:', error);
+      } else {
+        console.log('Registration status updated:', data);
+      }
+    } catch (error) {
+      console.error('Error updating registration status:', error);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navigation />
+        <main className="flex-1 container px-4 py-24">
+          <div className="max-w-2xl mx-auto text-center">
+            <p>Loading...</p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   if (!isSuccess) {
     return (
