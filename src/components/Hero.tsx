@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 const Hero = () => {
   return (
     <div className="relative h-screen w-full flex items-center justify-center overflow-hidden">
-      <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1466442929976-97f336a657be')] bg-cover bg-center">
+      <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1466442929976-97f336a657be')] bg-cover bg-center w-full">
         <div className="absolute inset-0 bg-gradient-to-b from-background/80 to-background/95"></div>
       </div>
       
