@@ -1,16 +1,16 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Navigation from "@/components/Navigation";
 import Hero from "@/components/Hero";
 import Footer from "@/components/Footer";
-import { BookOpen, Users, BookMarked, GraduationCap, ExternalLink, X } from "lucide-react";
+import { BookOpen, Users, X, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
 const Index = () => {
   const [showPaymentNotice, setShowPaymentNotice] = useState(true);
   
-  // Features array
+  // Features array - reduced to just 2 as requested
   const features = [
     {
       icon: <BookOpen className="h-6 w-6" />,
@@ -23,18 +23,6 @@ const Index = () => {
       title: "Classes for All Ages",
       description:
         "Multiple classes available for both brothers and sisters, catering to different learning levels and abilities.",
-    },
-    {
-      icon: <BookMarked className="h-6 w-6" />,
-      title: "Arabic Language",
-      description:
-        "Learn to read, write and speak Arabic with our experienced teachers using modern teaching methods.",
-    },
-    {
-      icon: <GraduationCap className="h-6 w-6" />,
-      title: "Qualified Teachers",
-      description:
-        "Our teachers are qualified and experienced in teaching Islamic studies and the Arabic language.",
     },
   ];
 
@@ -54,28 +42,21 @@ const Index = () => {
         <Hero />
 
         <section className="container px-4 py-24">
-          <h2 className="text-3xl md:text-4xl font-outfit font-semibold text-center mb-12">
-            Why Choose <span className="text-primary">Iqra Dugsi</span>
-          </h2>
-          
-          {/* Features grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Features grid - now showing only 2 features */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             {features.map((feature, index) => (
               <Card
                 key={index}
                 className="border-none shadow-md hover:shadow-lg transition-all duration-300"
-                style={{
-                  animationDelay: `${index * 100}ms`,
-                }}
               >
                 <CardContent className="p-6">
                   <div className="h-12 w-12 rounded-lg bg-primary/10 text-primary flex items-center justify-center mb-4">
                     {feature.icon}
                   </div>
-                  <h3 className="text-xl font-outfit font-medium mb-2">
+                  <h3 className="text-xl font-outfit font-medium mb-2 text-left">
                     {feature.title}
                   </h3>
-                  <p className="text-muted-foreground">
+                  <p className="text-muted-foreground text-left">
                     {feature.description}
                   </p>
                 </CardContent>
