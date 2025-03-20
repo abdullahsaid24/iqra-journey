@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
-import { Mail, Phone, User, Plus, Trash2 } from "lucide-react";
+import { Mail, Phone, User, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { useNavigate } from "react-router-dom";
@@ -227,30 +227,61 @@ const Signup = () => {
               </div>
 
               {!isAdultSignup && (
-                <div className="space-y-4">
-                  <h3 className="text-xl font-medium">Parent/Guardian Information</h3>
+                <div className="bg-muted p-5 rounded-lg">
+                  <h2 className="text-lg font-medium mb-4">Parent/Guardian Information</h2>
+                  
                   <div className="space-y-4">
                     <div>
-                      <Label htmlFor="parentName">Full Name</Label>
-                      <div className="flex mt-1.5">
-                        <User className="w-4 h-4 text-muted-foreground mr-2 mt-3" />
-                        <Input id="parentName" name="parentName" type="text" required value={formData.parentName} onChange={handleParentInfoChange} />
+                      <Label htmlFor="parentName" className="block mb-2">Full Name</Label>
+                      <div className="flex">
+                        <div className="flex items-center pr-3">
+                          <User className="h-5 w-5 text-muted-foreground" />
+                        </div>
+                        <Input 
+                          id="parentName" 
+                          name="parentName" 
+                          type="text" 
+                          required 
+                          value={formData.parentName} 
+                          onChange={handleParentInfoChange} 
+                          className="flex-1"
+                        />
                       </div>
                     </div>
 
                     <div>
-                      <Label htmlFor="email">Email Address</Label>
-                      <div className="flex mt-1.5">
-                        <Mail className="w-4 h-4 text-muted-foreground mr-2 mt-3" />
-                        <Input id="email" name="email" type="email" required value={formData.email} onChange={handleParentInfoChange} />
+                      <Label htmlFor="email" className="block mb-2">Email Address</Label>
+                      <div className="flex">
+                        <div className="flex items-center pr-3">
+                          <Mail className="h-5 w-5 text-muted-foreground" />
+                        </div>
+                        <Input 
+                          id="email" 
+                          name="email" 
+                          type="email" 
+                          required 
+                          value={formData.email} 
+                          onChange={handleParentInfoChange} 
+                          className="flex-1"
+                        />
                       </div>
                     </div>
 
                     <div>
-                      <Label htmlFor="phone">Phone Number</Label>
-                      <div className="flex mt-1.5">
-                        <Phone className="w-4 h-4 text-muted-foreground mr-2 mt-3" />
-                        <Input id="phone" name="phone" type="tel" required value={formData.phone} onChange={handleParentInfoChange} />
+                      <Label htmlFor="phone" className="block mb-2">Phone Number</Label>
+                      <div className="flex">
+                        <div className="flex items-center pr-3">
+                          <Phone className="h-5 w-5 text-muted-foreground" />
+                        </div>
+                        <Input 
+                          id="phone" 
+                          name="phone" 
+                          type="tel" 
+                          required 
+                          value={formData.phone} 
+                          onChange={handleParentInfoChange} 
+                          className="flex-1"
+                        />
                       </div>
                     </div>
                   </div>
@@ -258,11 +289,11 @@ const Signup = () => {
               )}
 
               {/* Students Information */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-xl font-medium">
+              <div className="bg-muted p-5 rounded-lg">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-medium">
                     {isAdultSignup ? "Student Information" : "Children Information"}
-                  </h3>
+                  </h2>
                   {!isAdultSignup && (
                     <Button 
                       type="button" 
@@ -276,30 +307,28 @@ const Signup = () => {
                 </div>
 
                 {(isAdultSignup ? [students[0]] : students).map((student, index) => (
-                  <div key={index} className="p-4 border rounded-lg space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-medium">
-                        {isAdultSignup ? "Personal Information" : `Student ${index + 1}`}
-                      </h4>
-                      {!isAdultSignup && students.length > 1 && <Button type="button" variant="ghost" size="sm" onClick={() => removeStudent(index)} className="text-destructive hover:text-destructive">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>}
+                  <div key={index} className="mb-4 border border-gray-200 p-4 rounded-lg">
+                    <div className="mb-3">
+                      <h3 className="font-medium">
+                        {`Student ${index + 1}`}
+                      </h3>
                     </div>
 
-                    <div className="grid gap-4">
+                    <div className="space-y-4">
                       <div>
-                        <Label htmlFor={`student-name-${index}`}>Full Name</Label>
+                        <Label htmlFor={`student-name-${index}`} className="block mb-2">Full Name</Label>
                         <Input 
                           id={`student-name-${index}`} 
                           type="text" 
                           required 
                           value={student.name} 
                           onChange={e => handleStudentChange(index, "name", e.target.value)} 
+                          className="w-full"
                         />
                       </div>
 
                       <div>
-                        <Label htmlFor={`student-age-${index}`}>Age</Label>
+                        <Label htmlFor={`student-age-${index}`} className="block mb-2">Age</Label>
                         <Input 
                           id={`student-age-${index}`} 
                           type="number" 
@@ -308,24 +337,45 @@ const Signup = () => {
                           max={isAdultSignup ? "100" : "17"} 
                           value={student.age} 
                           onChange={e => handleStudentChange(index, "age", e.target.value)} 
+                          className="w-full"
                         />
                       </div>
 
                       {isAdultSignup && (
                         <>
                           <div>
-                            <Label htmlFor="email">Email Address</Label>
-                            <div className="flex mt-1.5">
-                              <Mail className="w-4 h-4 text-muted-foreground mr-2 mt-3" />
-                              <Input id="email" name="email" type="email" required value={formData.email} onChange={handleParentInfoChange} />
+                            <Label htmlFor="email" className="block mb-2">Email Address</Label>
+                            <div className="flex">
+                              <div className="flex items-center pr-3">
+                                <Mail className="h-5 w-5 text-muted-foreground" />
+                              </div>
+                              <Input 
+                                id="email" 
+                                name="email" 
+                                type="email" 
+                                required 
+                                value={formData.email} 
+                                onChange={handleParentInfoChange} 
+                                className="flex-1"
+                              />
                             </div>
                           </div>
 
                           <div>
-                            <Label htmlFor="phone">Phone Number</Label>
-                            <div className="flex mt-1.5">
-                              <Phone className="w-4 h-4 text-muted-foreground mr-2 mt-3" />
-                              <Input id="phone" name="phone" type="tel" required value={formData.phone} onChange={handleParentInfoChange} />
+                            <Label htmlFor="phone" className="block mb-2">Phone Number</Label>
+                            <div className="flex">
+                              <div className="flex items-center pr-3">
+                                <Phone className="h-5 w-5 text-muted-foreground" />
+                              </div>
+                              <Input 
+                                id="phone" 
+                                name="phone" 
+                                type="tel" 
+                                required 
+                                value={formData.phone} 
+                                onChange={handleParentInfoChange} 
+                                className="flex-1"
+                              />
                             </div>
                           </div>
                         </>
@@ -335,7 +385,11 @@ const Signup = () => {
                 ))}
               </div>
 
-              <Button type="submit" className="w-full bg-[#8bac97] hover:bg-[#71a384]" disabled={isLoading}>
+              <Button 
+                type="submit" 
+                className="w-full bg-[#8bac97] hover:bg-[#71a384] h-12 font-medium text-base" 
+                disabled={isLoading}
+              >
                 {isLoading ? "Processing..." : "Proceed to Payment"}
               </Button>
             </form>
