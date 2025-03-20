@@ -88,13 +88,11 @@ const Signup = () => {
           throw new Error('Checkout URL not returned');
         }
 
-        // Show success message
         toast({
           title: "Registration Successful",
           description: "Redirecting to payment..."
         });
 
-        // Redirect to Stripe Checkout
         console.log("Redirecting to checkout URL:", checkoutData.url);
         window.location.href = checkoutData.url;
         
@@ -114,7 +112,6 @@ const Signup = () => {
           variant: "destructive"
         });
         
-        // Navigate to a fallback page if payment setup fails
         navigate("/success?success=false");
       }
     };
@@ -127,7 +124,6 @@ const Signup = () => {
     setIsLoading(true);
     
     try {
-      // Insert registration data
       const registrationData: Registration = {
         registration_type: isAdultSignup ? 'adult' : 'parent',
         parent_name: isAdultSignup ? students[0].name : formData.parentName,
@@ -154,7 +150,6 @@ const Signup = () => {
 
       console.log("Registration successful:", registration);
 
-      // Insert student information
       const studentsToInsert: RegistrationStudent[] = students.map(student => ({
         registration_id: registration.id,
         name: student.name,
@@ -174,7 +169,6 @@ const Signup = () => {
 
       console.log("Students registered successfully");
       
-      // Create Stripe checkout session with retry logic
       await createCheckoutSession(registration.id);
       
     } catch (error) {
@@ -193,9 +187,9 @@ const Signup = () => {
       <Navigation />
 
       <main className="flex-1 py-16">
-        <section className="container px-4 py-8">
+        <section className="container px-4">
           <div className="max-w-2xl mx-auto">
-            <div className="text-center mb-8">
+            <div className="text-center mb-6">
               <h1 className="text-3xl font-outfit font-medium mb-4">
                 Student Registration
               </h1>
@@ -204,39 +198,42 @@ const Signup = () => {
               </p>
               
               <div className="flex justify-center gap-4 mb-8">
-                <Button variant={isAdultSignup ? "outline" : "default"} onClick={() => setIsAdultSignup(false)}>
+                <Button 
+                  className={!isAdultSignup ? "bg-[#8bac97] hover:bg-[#71a384]" : "bg-white text-black border border-gray-300 hover:bg-gray-100"} 
+                  onClick={() => setIsAdultSignup(false)}
+                >
                   Parent Registration
                 </Button>
-                <Button variant={isAdultSignup ? "default" : "outline"} onClick={() => setIsAdultSignup(true)}>
+                <Button 
+                  className={isAdultSignup ? "bg-[#8bac97] hover:bg-[#71a384]" : "bg-white text-black border border-gray-300 hover:bg-gray-100"} 
+                  onClick={() => setIsAdultSignup(true)}
+                >
                   Adult Registration
                 </Button>
               </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-8">
-              {/* Program Fees Box */}
-              <div className="bg-muted p-5 rounded-lg">
-                <h2 className="font-medium text-lg mb-2">Program Fees</h2>
-                <p className="text-muted-foreground">The registration fee is $50 per student per month.</p>
-                <p className="mt-2 text-[#71a384]">
-                  Important: If you are experiencing financial difficulties, please don't hesitate to discuss with our Mualim. We ensure that no student is denied education due to financial constraints.
-                </p>
-                <p className="mt-2 text-muted-foreground">
-                  Note: All registered students will be added to our Quran Portal system for online learning access.
-                </p>
-              </div>
+            <div className="bg-white shadow rounded-lg overflow-hidden border border-gray-100">
+              <form onSubmit={handleSubmit} className="p-6">
+                {/* Program Fees Box */}
+                <div className="bg-gray-50 p-5 rounded-lg mb-6">
+                  <h2 className="font-medium text-lg mb-2">Program Fees</h2>
+                  <p className="text-muted-foreground">The registration fee is $50 per student per month.</p>
+                  <p className="mt-2 text-[#71a384]">
+                    Important: If you are experiencing financial difficulties, please don't hesitate to discuss with our Mualim. We ensure that no student is denied education due to financial constraints.
+                  </p>
+                  <p className="mt-2 text-muted-foreground">
+                    Note: All registered students will be added to our Quran Portal system for online learning access.
+                  </p>
+                </div>
 
-              {!isAdultSignup && (
-                <div className="bg-muted p-5 rounded-lg">
-                  <h2 className="text-lg font-medium mb-4">Parent/Guardian Information</h2>
-                  
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="parentName" className="block mb-2">Full Name</Label>
-                      <div className="flex">
-                        <div className="flex items-center pr-3">
-                          <User className="h-5 w-5 text-muted-foreground" />
-                        </div>
+                {!isAdultSignup && (
+                  <div className="mb-6">
+                    <h2 className="text-lg font-medium mb-4">Parent/Guardian Information</h2>
+                    
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="parentName" className="text-sm font-medium text-gray-700 block mb-1">Full Name</Label>
                         <Input 
                           id="parentName" 
                           name="parentName" 
@@ -244,17 +241,12 @@ const Signup = () => {
                           required 
                           value={formData.parentName} 
                           onChange={handleParentInfoChange} 
-                          className="flex-1"
+                          className="w-full"
                         />
                       </div>
-                    </div>
 
-                    <div>
-                      <Label htmlFor="email" className="block mb-2">Email Address</Label>
-                      <div className="flex">
-                        <div className="flex items-center pr-3">
-                          <Mail className="h-5 w-5 text-muted-foreground" />
-                        </div>
+                      <div>
+                        <Label htmlFor="email" className="text-sm font-medium text-gray-700 block mb-1">Email Address</Label>
                         <Input 
                           id="email" 
                           name="email" 
@@ -262,17 +254,12 @@ const Signup = () => {
                           required 
                           value={formData.email} 
                           onChange={handleParentInfoChange} 
-                          className="flex-1"
+                          className="w-full"
                         />
                       </div>
-                    </div>
 
-                    <div>
-                      <Label htmlFor="phone" className="block mb-2">Phone Number</Label>
-                      <div className="flex">
-                        <div className="flex items-center pr-3">
-                          <Phone className="h-5 w-5 text-muted-foreground" />
-                        </div>
+                      <div>
+                        <Label htmlFor="phone" className="text-sm font-medium text-gray-700 block mb-1">Phone Number</Label>
                         <Input 
                           id="phone" 
                           name="phone" 
@@ -280,75 +267,70 @@ const Signup = () => {
                           required 
                           value={formData.phone} 
                           onChange={handleParentInfoChange} 
-                          className="flex-1"
+                          className="w-full"
                         />
                       </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Students Information */}
-              <div className="bg-muted p-5 rounded-lg">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-medium">
-                    {isAdultSignup ? "Student Information" : "Children Information"}
-                  </h2>
-                  {!isAdultSignup && (
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      onClick={addStudent} 
-                      className="flex items-center gap-2"
-                    >
-                      <Plus className="h-4 w-4" /> Add Student
-                    </Button>
-                  )}
-                </div>
+                {/* Students Information */}
+                <div className="mb-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-lg font-medium">
+                      {isAdultSignup ? "Student Information" : "Children Information"}
+                    </h2>
+                    {!isAdultSignup && (
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={addStudent} 
+                        className="flex items-center gap-2"
+                      >
+                        <Plus className="h-4 w-4" /> Add Student
+                      </Button>
+                    )}
+                  </div>
 
-                {(isAdultSignup ? [students[0]] : students).map((student, index) => (
-                  <div key={index} className="mb-4 border border-gray-200 p-4 rounded-lg">
-                    <div className="mb-3">
-                      <h3 className="font-medium">
-                        {`Student ${index + 1}`}
-                      </h3>
-                    </div>
-
-                    <div className="space-y-4">
-                      <div>
-                        <Label htmlFor={`student-name-${index}`} className="block mb-2">Full Name</Label>
-                        <Input 
-                          id={`student-name-${index}`} 
-                          type="text" 
-                          required 
-                          value={student.name} 
-                          onChange={e => handleStudentChange(index, "name", e.target.value)} 
-                          className="w-full"
-                        />
+                  {(isAdultSignup ? [students[0]] : students).map((student, index) => (
+                    <div key={index} className="p-4 border border-gray-100 rounded-lg mb-4">
+                      <div className="mb-3">
+                        <h3 className="font-medium">
+                          {`Student ${index + 1}`}
+                        </h3>
                       </div>
 
-                      <div>
-                        <Label htmlFor={`student-age-${index}`} className="block mb-2">Age</Label>
-                        <Input 
-                          id={`student-age-${index}`} 
-                          type="number" 
-                          required 
-                          min={isAdultSignup ? "18" : "4"} 
-                          max={isAdultSignup ? "100" : "17"} 
-                          value={student.age} 
-                          onChange={e => handleStudentChange(index, "age", e.target.value)} 
-                          className="w-full"
-                        />
-                      </div>
+                      <div className="space-y-4">
+                        <div>
+                          <Label htmlFor={`student-name-${index}`} className="text-sm font-medium text-gray-700 block mb-1">Full Name</Label>
+                          <Input 
+                            id={`student-name-${index}`} 
+                            type="text" 
+                            required 
+                            value={student.name} 
+                            onChange={e => handleStudentChange(index, "name", e.target.value)} 
+                            className="w-full"
+                          />
+                        </div>
 
-                      {isAdultSignup && (
-                        <>
-                          <div>
-                            <Label htmlFor="email" className="block mb-2">Email Address</Label>
-                            <div className="flex">
-                              <div className="flex items-center pr-3">
-                                <Mail className="h-5 w-5 text-muted-foreground" />
-                              </div>
+                        <div>
+                          <Label htmlFor={`student-age-${index}`} className="text-sm font-medium text-gray-700 block mb-1">Age</Label>
+                          <Input 
+                            id={`student-age-${index}`} 
+                            type="number" 
+                            required 
+                            min={isAdultSignup ? "18" : "4"} 
+                            max={isAdultSignup ? "100" : "17"} 
+                            value={student.age} 
+                            onChange={e => handleStudentChange(index, "age", e.target.value)} 
+                            className="w-full"
+                          />
+                        </div>
+
+                        {isAdultSignup && (
+                          <>
+                            <div>
+                              <Label htmlFor="email" className="text-sm font-medium text-gray-700 block mb-1">Email Address</Label>
                               <Input 
                                 id="email" 
                                 name="email" 
@@ -356,17 +338,12 @@ const Signup = () => {
                                 required 
                                 value={formData.email} 
                                 onChange={handleParentInfoChange} 
-                                className="flex-1"
+                                className="w-full"
                               />
                             </div>
-                          </div>
 
-                          <div>
-                            <Label htmlFor="phone" className="block mb-2">Phone Number</Label>
-                            <div className="flex">
-                              <div className="flex items-center pr-3">
-                                <Phone className="h-5 w-5 text-muted-foreground" />
-                              </div>
+                            <div>
+                              <Label htmlFor="phone" className="text-sm font-medium text-gray-700 block mb-1">Phone Number</Label>
                               <Input 
                                 id="phone" 
                                 name="phone" 
@@ -374,25 +351,25 @@ const Signup = () => {
                                 required 
                                 value={formData.phone} 
                                 onChange={handleParentInfoChange} 
-                                className="flex-1"
+                                className="w-full"
                               />
                             </div>
-                          </div>
-                        </>
-                      )}
+                          </>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
 
-              <Button 
-                type="submit" 
-                className="w-full bg-[#8bac97] hover:bg-[#71a384] h-12 font-medium text-base" 
-                disabled={isLoading}
-              >
-                {isLoading ? "Processing..." : "Proceed to Payment"}
-              </Button>
-            </form>
+                <Button 
+                  type="submit" 
+                  className="w-full bg-[#8bac97] hover:bg-[#71a384] h-12 font-medium text-base" 
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Processing..." : "Proceed to Payment"}
+                </Button>
+              </form>
+            </div>
           </div>
         </section>
       </main>
