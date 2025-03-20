@@ -12,7 +12,7 @@ const Hero = () => {
       
       <div className="container relative px-4">
         <div className="max-w-3xl mx-auto text-center space-y-8">
-          <h1 className="hero-title">
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-outfit font-bold">
             Welcome to Iqra Dugsi
             <span className="block text-2xl text-primary mt-2 font-normal">Proudly serving our community for over 20 years</span>
           </h1>
