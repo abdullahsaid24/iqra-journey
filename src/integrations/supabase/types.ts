@@ -167,6 +167,10 @@ export type Database = {
           lessons_passed: number | null
           month: string
           pages_passed_current: number | null
+          review_far_failed: number | null
+          review_far_passed: number | null
+          review_near_failed: number | null
+          review_near_passed: number | null
           student_id: string
           total_progress_percentage: number | null
           total_verses: number | null
@@ -187,6 +191,10 @@ export type Database = {
           lessons_passed?: number | null
           month: string
           pages_passed_current?: number | null
+          review_far_failed?: number | null
+          review_far_passed?: number | null
+          review_near_failed?: number | null
+          review_near_passed?: number | null
           student_id: string
           total_progress_percentage?: number | null
           total_verses?: number | null
@@ -207,6 +215,10 @@ export type Database = {
           lessons_passed?: number | null
           month?: string
           pages_passed_current?: number | null
+          review_far_failed?: number | null
+          review_far_passed?: number | null
+          review_near_failed?: number | null
+          review_near_passed?: number | null
           student_id?: string
           total_progress_percentage?: number | null
           total_verses?: number | null
