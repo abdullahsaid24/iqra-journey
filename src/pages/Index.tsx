@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import Navigation from "@/components/Navigation";
 import Hero from "@/components/Hero";
@@ -10,7 +9,6 @@ import { Card, CardContent } from "@/components/ui/card";
 const Index = () => {
   const [showPaymentNotice, setShowPaymentNotice] = useState(true);
   
-  // Features array - reduced to just 2 as requested
   const features = [
     {
       icon: <BookOpen className="h-6 w-6" />,
@@ -26,7 +24,6 @@ const Index = () => {
     },
   ];
 
-  // Quote object
   const quote = {
     arabic: "خَيْرُكُمْ مَنْ تَعَلَّمَ الْقُرْآنَ وَعَلَّمَهُ",
     text: "The best among you are those who learn the Quran and teach it.",
@@ -42,7 +39,6 @@ const Index = () => {
         <Hero />
 
         <section className="container px-4 py-24">
-          {/* Features grid - now showing only 2 features */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             {features.map((feature, index) => (
               <Card

@@ -36,7 +36,7 @@ const Navigation = () => {
               ["About", "/about"],
               ["Classes", "/classes"],
               ["Sign Up", "/signup"],
-              ["Quran Portal", "https://iqradugsiquran.netlify.app/"],
+              ["Quran Portal", "https://quranprogress.ca/"],
             ].map(([title, url]) => (
               url.startsWith('http') ? (
                 <a
@@ -84,7 +84,7 @@ const Navigation = () => {
               ["About", "/about"],
               ["Classes", "/classes"],
               ["Sign Up", "/signup"],
-              ["Quran Portal", "https://iqradugsiquran.netlify.app/"],
+              ["Quran Portal", "https://quranprogress.ca/"],
             ].map(([title, url]) => (
               url.startsWith('http') ? (
                 <a
