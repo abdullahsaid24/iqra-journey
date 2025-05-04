@@ -35,7 +35,7 @@ const Navigation = () => {
               ["Home", "/"],
               ["About", "/about"],
               ["Classes", "/classes"],
-              ["Sign Up", "/signup"],
+              ["Sign Up to Dugsi", "/signup"],
               ["Quran Portal", "https://quranprogress.ca/"],
             ].map(([title, url]) => (
               url.startsWith('http') ? (
@@ -83,7 +83,7 @@ const Navigation = () => {
               ["Home", "/"],
               ["About", "/about"],
               ["Classes", "/classes"],
-              ["Sign Up", "/signup"],
+              ["Sign Up to Dugsi", "/signup"],
               ["Quran Portal", "https://quranprogress.ca/"],
             ].map(([title, url]) => (
               url.startsWith('http') ? (

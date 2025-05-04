@@ -9,6 +9,118 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      adult_students: {
+        Row: {
+          class_id: string | null
+          created_at: string | null
+          email: string
+          first_name: string | null
+          id: string
+          last_name: string | null
+          phone_number: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          class_id?: string | null
+          created_at?: string | null
+          email: string
+          first_name?: string | null
+          id: string
+          last_name?: string | null
+          phone_number?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          class_id?: string | null
+          created_at?: string | null
+          email?: string
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          phone_number?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "adult_students_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      class_links: {
+        Row: {
+          created_at: string | null
+          id: string
+          weekday_class_id: string
+          weekend_class_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          weekday_class_id: string
+          weekend_class_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          weekday_class_id?: string
+          weekend_class_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_links_weekday_class_id_fkey"
+            columns: ["weekday_class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "class_links_weekend_class_id_fkey"
+            columns: ["weekend_class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      class_notification_templates: {
+        Row: {
+          class_id: string
+          content: string
+          created_at: string
+          id: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          class_id: string
+          content: string
+          created_at?: string
+          id?: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          class_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_notification_templates_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       class_teachers: {
         Row: {
           class_id: string | null
@@ -241,23 +353,116 @@ export type Database = {
           },
         ]
       }
+      notification_preferences: {
+        Row: {
+          created_at: string | null
+          homework_assigned: boolean | null
+          id: string
+          lesson_fail: boolean | null
+          lesson_pass: boolean | null
+          parent_user_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          homework_assigned?: boolean | null
+          id?: string
+          lesson_fail?: boolean | null
+          lesson_pass?: boolean | null
+          parent_user_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          homework_assigned?: boolean | null
+          id?: string
+          lesson_fail?: boolean | null
+          lesson_pass?: boolean | null
+          parent_user_id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      notification_presets: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          is_adult: boolean | null
+          is_default: boolean
+          level: number | null
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          is_adult?: boolean | null
+          is_default?: boolean
+          level?: number | null
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          is_adult?: boolean | null
+          is_default?: boolean
+          level?: number | null
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      notification_templates: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       parent_student_links: {
         Row: {
           created_at: string
           id: string
           parent_user_id: string
+          phone_number: string | null
+          secondary_phone_number: string | null
           student_id: string
         }
         Insert: {
           created_at?: string
           id?: string
           parent_user_id: string
+          phone_number?: string | null
+          secondary_phone_number?: string | null
           student_id: string
         }
         Update: {
           created_at?: string
           id?: string
           parent_user_id?: string
+          phone_number?: string | null
+          secondary_phone_number?: string | null
           student_id?: string
         }
         Relationships: [
@@ -432,31 +637,43 @@ export type Database = {
       }
       students: {
         Row: {
+          absence_level: number
           class_id: string | null
+          consecutive_absences: number
           created_at: string
           email: string | null
+          failure_level: number
           first_name: string | null
           id: string
+          last_lesson_status: string | null
           last_name: string | null
           name: string
           updated_at: string
         }
         Insert: {
+          absence_level?: number
           class_id?: string | null
+          consecutive_absences?: number
           created_at?: string
           email?: string | null
+          failure_level?: number
           first_name?: string | null
           id?: string
+          last_lesson_status?: string | null
           last_name?: string | null
           name: string
           updated_at?: string
         }
         Update: {
+          absence_level?: number
           class_id?: string | null
+          consecutive_absences?: number
           created_at?: string
           email?: string | null
+          failure_level?: number
           first_name?: string | null
           id?: string
+          last_lesson_status?: string | null
           last_name?: string | null
           name?: string
           updated_at?: string
@@ -529,6 +746,89 @@ export type Database = {
         }
         Relationships: []
       }
+      weekday_attendance: {
+        Row: {
+          attendance_date: string
+          class_id: string
+          created_at: string | null
+          created_by: string
+          id: string
+          note: string | null
+          status: string
+          student_id: string
+        }
+        Insert: {
+          attendance_date: string
+          class_id: string
+          created_at?: string | null
+          created_by: string
+          id?: string
+          note?: string | null
+          status?: string
+          student_id: string
+        }
+        Update: {
+          attendance_date?: string
+          class_id?: string
+          created_at?: string | null
+          created_by?: string
+          id?: string
+          note?: string | null
+          status?: string
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weekday_attendance_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "weekday_attendance_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      weekday_notification_presets: {
+        Row: {
+          class_id: string | null
+          content: string
+          created_at: string | null
+          id: string
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          class_id?: string | null
+          content: string
+          created_at?: string | null
+          id?: string
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          class_id?: string | null
+          content?: string
+          created_at?: string | null
+          id?: string
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weekday_notification_presets_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       word_mistakes: {
         Row: {
           ayah: number
@@ -569,26 +869,42 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      linked_classes_view: {
+        Row: {
+          weekday_class_id: string | null
+          weekday_class_name: string | null
+          weekend_class_id: string | null
+          weekend_class_name: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_links_weekday_class_id_fkey"
+            columns: ["weekday_class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "class_links_weekend_class_id_fkey"
+            columns: ["weekend_class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       calculate_pages_in_range: {
-        Args: {
-          p_surah: string
-          p_verses: string
-        }
+        Args: { p_surah: string; p_verses: string }
         Returns: number
       }
       delete_user: {
-        Args: {
-          user_id_to_delete: string
-        }
+        Args: { user_id_to_delete: string }
         Returns: undefined
       }
       get_latest_assignments: {
-        Args: {
-          p_student_id: string
-        }
+        Args: { p_student_id: string }
         Returns: {
           id: string
           student_id: string
@@ -600,39 +916,35 @@ export type Database = {
         }[]
       }
       get_student_by_email: {
-        Args: {
-          p_email: string
-        }
+        Args: { p_email: string }
         Returns: string
       }
       get_student_teacher_info: {
-        Args: {
-          student_id: string
-        }
+        Args: { student_id: string }
         Returns: {
           student_name: string
           class_id: string
           teacher_user_id: string
         }[]
       }
+      get_user_email: {
+        Args: { user_id: string }
+        Returns: string
+      }
       has_role: {
-        Args: {
-          user_id: string
-          role: Database["public"]["Enums"]["app_role"]
-        }
+        Args: { user_id: string; role: Database["public"]["Enums"]["app_role"] }
+        Returns: boolean
+      }
+      is_admin: {
+        Args: { user_id: string }
         Returns: boolean
       }
       is_subscribed: {
-        Args: {
-          user_id: string
-        }
+        Args: { user_id: string }
         Returns: boolean
       }
       verses_between: {
-        Args: {
-          start_pos: string
-          end_pos: string
-        }
+        Args: { start_pos: string; end_pos: string }
         Returns: number
       }
     }
@@ -646,27 +958,29 @@ export type Database = {
   }
 }
 
-type PublicSchema = Database[Extract<keyof Database, "public">]
+type DefaultSchema = Database[Extract<keyof Database, "public">]
 
 export type Tables<
-  PublicTableNameOrOptions extends
-    | keyof (PublicSchema["Tables"] & PublicSchema["Views"])
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof Database },
-  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-    ? keyof (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
-        Database[PublicTableNameOrOptions["schema"]]["Views"])
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
     : never = never,
-> = PublicTableNameOrOptions extends { schema: keyof Database }
-  ? (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
-      Database[PublicTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
+  ? (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
     ? R
     : never
-  : PublicTableNameOrOptions extends keyof (PublicSchema["Tables"] &
-        PublicSchema["Views"])
-    ? (PublicSchema["Tables"] &
-        PublicSchema["Views"])[PublicTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
         Row: infer R
       }
       ? R
@@ -674,20 +988,22 @@ export type Tables<
     : never
 
 export type TablesInsert<
-  PublicTableNameOrOptions extends
-    | keyof PublicSchema["Tables"]
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
     | { schema: keyof Database },
-  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-    ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = PublicTableNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
+  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Insert: infer I
     }
     ? I
     : never
-  : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
-    ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
         Insert: infer I
       }
       ? I
@@ -695,20 +1011,22 @@ export type TablesInsert<
     : never
 
 export type TablesUpdate<
-  PublicTableNameOrOptions extends
-    | keyof PublicSchema["Tables"]
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
     | { schema: keyof Database },
-  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-    ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = PublicTableNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
+  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Update: infer U
     }
     ? U
     : never
-  : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
-    ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
         Update: infer U
       }
       ? U
@@ -716,21 +1034,23 @@ export type TablesUpdate<
     : never
 
 export type Enums<
-  PublicEnumNameOrOptions extends
-    | keyof PublicSchema["Enums"]
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
     | { schema: keyof Database },
-  EnumName extends PublicEnumNameOrOptions extends { schema: keyof Database }
-    ? keyof Database[PublicEnumNameOrOptions["schema"]]["Enums"]
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
     : never = never,
-> = PublicEnumNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicEnumNameOrOptions["schema"]]["Enums"][EnumName]
-  : PublicEnumNameOrOptions extends keyof PublicSchema["Enums"]
-    ? PublicSchema["Enums"][PublicEnumNameOrOptions]
+> = DefaultSchemaEnumNameOrOptions extends { schema: keyof Database }
+  ? Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
     : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-    | keyof PublicSchema["CompositeTypes"]
+    | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof Database },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof Database
@@ -739,6 +1059,15 @@ export type CompositeTypes<
     : never = never,
 > = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
   ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
-  : PublicCompositeTypeNameOrOptions extends keyof PublicSchema["CompositeTypes"]
-    ? PublicSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
+
+export const Constants = {
+  public: {
+    Enums: {
+      app_role: ["admin", "teacher", "parent", "student"],
+      registration_type: ["parent", "adult"],
+    },
+  },
+} as const
