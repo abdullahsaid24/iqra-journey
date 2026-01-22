@@ -58,13 +58,7 @@ export const Navigation = ({ isAuthenticated, onSignOut }: NavigationProps) => {
               Sign Out
             </Button>
           </div>
-        ) : (
-          <Link to="/quran/login" className="w-full sm:w-auto">
-            <Button variant="outline" className="w-full sm:w-auto text-white border-white hover:bg-white hover:text-quran-bg">
-              Sign In
-            </Button>
-          </Link>
-        )}
+        ) : null}
       </div>
     </nav>
   );
