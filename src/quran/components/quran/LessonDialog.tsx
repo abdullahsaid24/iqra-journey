@@ -14,7 +14,10 @@ import {
 import { Button } from "@/quran/components/ui/button";
 import { SurahSelect } from "./SurahSelect";
 import { VersesSelect } from "./VersesSelect";
+import { JuzSelect } from "./JuzSelect";
 import { formatLessonDisplay } from "@/quran/lib/utils";
+import { JUZ_DATA } from "@/quran/types/juz";
+import { AVAILABLE_SURAHS } from "@/quran/types/quran";
 
 interface LessonDialogProps {
   showDialog: boolean;
@@ -29,14 +32,28 @@ export const LessonDialog = ({
   studentId,
   onLessonUpdate,
 }: LessonDialogProps) => {
+  const [selectedJuz, setSelectedJuz] = useState<string>("");
   const [selectedSurah, setSelectedSurah] = useState<string>("");
   const [selectedVerses, setSelectedVerses] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Handle Juz selection - auto-fill Surah and Verse to the start of the Juz
+  const handleJuzChange = (juzNumber: string) => {
+    setSelectedJuz(juzNumber);
+    const juz = JUZ_DATA.find(j => j.number === parseInt(juzNumber));
+    if (juz) {
+      const surah = AVAILABLE_SURAHS.find(s => s.number === juz.startSurah);
+      if (surah) {
+        setSelectedSurah(surah.name);
+        setSelectedVerses(juz.startVerse.toString());
+      }
+    }
+  };
+
   const handleSave = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     if (!selectedSurah || !selectedVerses) {
       toast.error("Please select both surah and verses");
       return;
@@ -46,13 +63,13 @@ export const LessonDialog = ({
     try {
       // Check if session exists before making the request
       const { data: { session } } = await supabase.auth.getSession();
-      
+
       if (!session) {
         toast.error("Your session has expired. Please log in again.");
         setIsSubmitting(false);
         return;
       }
-      
+
       const { error } = await supabase.from("lessons").insert({
         student_id: studentId,
         surah: selectedSurah,
@@ -82,22 +99,23 @@ export const LessonDialog = ({
 
   useEffect(() => {
     if (showDialog) {
+      setSelectedJuz("");
       setSelectedSurah("");
       setSelectedVerses("");
     }
   }, [showDialog]);
 
   return (
-    <AlertDialog 
-      open={showDialog} 
+    <AlertDialog
+      open={showDialog}
       onOpenChange={(open) => {
         if (!isSubmitting) {
           onOpenChange(open);
         }
       }}
     >
-      <AlertDialogContent 
-        onClick={handleContentClick} 
+      <AlertDialogContent
+        onClick={handleContentClick}
         className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto"
         onPointerDownCapture={(e) => e.stopPropagation()}
         onPointerUpCapture={(e) => e.stopPropagation()}
@@ -110,6 +128,10 @@ export const LessonDialog = ({
         </AlertDialogHeader>
 
         <div className="grid gap-4 py-4" onClick={handleContentClick}>
+          <JuzSelect
+            selectedJuz={selectedJuz}
+            onJuzChange={handleJuzChange}
+          />
           <SurahSelect
             selectedSurah={selectedSurah}
             onSurahChange={setSelectedSurah}
@@ -130,7 +152,7 @@ export const LessonDialog = ({
           }}>
             Cancel
           </AlertDialogCancel>
-          <Button 
+          <Button
             onClick={handleSave}
             disabled={isSubmitting || !selectedSurah || !selectedVerses}
           >

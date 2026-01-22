@@ -6,8 +6,11 @@ import { RadioGroup, RadioGroupItem } from "@/quran/components/ui/radio-group";
 import { toast } from "sonner";
 import { SurahSelect } from "./SurahSelect";
 import { VersesSelect } from "./VersesSelect";
+import { JuzSelect } from "./JuzSelect";
 import { supabase } from "@/quran/lib/supabase";
 import { formatLessonDisplay, cleanVerseReferences } from "@/quran/lib/utils";
+import { JUZ_DATA } from "@/quran/types/juz";
+import { AVAILABLE_SURAHS } from "@/quran/types/quran";
 
 interface HomeworkAssignmentProps {
   studentId: string;
@@ -15,10 +18,24 @@ interface HomeworkAssignmentProps {
 }
 
 export const HomeworkAssignment = ({ studentId, onAssign }: HomeworkAssignmentProps) => {
+  const [selectedJuz, setSelectedJuz] = useState("");
   const [selectedSurah, setSelectedSurah] = useState("");
   const [selectedVerses, setSelectedVerses] = useState("");
   const [status, setStatus] = useState<"pending" | "passed" | "failed">("pending");
   const queryClient = useQueryClient();
+
+  // Handle Juz selection - auto-fill Surah and Verse to the start of the Juz
+  const handleJuzChange = (juzNumber: string) => {
+    setSelectedJuz(juzNumber);
+    const juz = JUZ_DATA.find(j => j.number === parseInt(juzNumber));
+    if (juz) {
+      const surah = AVAILABLE_SURAHS.find(s => s.number === juz.startSurah);
+      if (surah) {
+        setSelectedSurah(surah.name);
+        setSelectedVerses(juz.startVerse.toString());
+      }
+    }
+  };
 
   const assignHomeworkMutation = useMutation({
     mutationFn: async () => {
@@ -37,27 +54,27 @@ export const HomeworkAssignment = ({ studentId, onAssign }: HomeworkAssignmentPr
         });
 
       if (error) throw error;
-      
+
       const { data: studentData } = await supabase
         .from('students')
         .select('name')
         .eq('id', studentId)
         .single();
-      
+
       if (studentData) {
         const { data: parentLinks } = await supabase
           .from('parent_student_links')
           .select('parent_user_id, phone_number')
           .eq('student_id', studentId);
-          
+
         if (parentLinks && parentLinks.length > 0) {
           const notificationPromises = parentLinks.map(async (link) => {
             try {
               if (link.phone_number) {
                 console.log(`Sending homework notification to parent ${link.parent_user_id} for student ${studentData.name}`);
-                
+
                 const formattedVerses = formatLessonDisplay(selectedSurah, `${selectedSurah}:${selectedVerses}`);
-                
+
                 const response = await supabase.functions.invoke('send-sms', {
                   body: {
                     student_id: studentId,
@@ -68,12 +85,12 @@ export const HomeworkAssignment = ({ studentId, onAssign }: HomeworkAssignmentPr
                     debug_mode: true
                   }
                 });
-                
+
                 if (response.error) {
                   console.error("SMS notification error:", response.error);
                   return { success: false, message: response.error.message };
-                } 
-                
+                }
+
                 if (response.data) {
                   if (response.data.simulated) {
                     console.log("Simulated SMS notification:", response.data.intended_message);
@@ -86,7 +103,7 @@ export const HomeworkAssignment = ({ studentId, onAssign }: HomeworkAssignmentPr
                     return { success: false, message: response.data.errors[0] };
                   }
                 }
-                
+
                 return { success: false, message: "Unknown response from SMS service" };
               } else {
                 console.log(`Parent ${link.parent_user_id} has no phone number, skipping notification`);
@@ -97,13 +114,13 @@ export const HomeworkAssignment = ({ studentId, onAssign }: HomeworkAssignmentPr
               return { success: false, message: notificationError.message };
             }
           });
-          
+
           const results = await Promise.all(notificationPromises);
-          
+
           const successful = results.filter(r => r.success && !r.skipped);
           const simulated = results.filter(r => r.success && r.simulated);
           const failed = results.filter(r => !r.success);
-          
+
           if (successful.length > 0) {
             if (simulated.length === successful.length) {
               toast.success(`Notification would be sent to parents (development mode)`);
@@ -147,8 +164,13 @@ export const HomeworkAssignment = ({ studentId, onAssign }: HomeworkAssignmentPr
   return (
     <div className="space-y-6 p-6 bg-white rounded-lg shadow-md">
       <h3 className="text-2xl font-semibold text-quran-bg">Assign Homework</h3>
-      
+
       <div className="space-y-4">
+        <JuzSelect
+          selectedJuz={selectedJuz}
+          onJuzChange={handleJuzChange}
+        />
+
         <SurahSelect
           selectedSurah={selectedSurah}
           onSurahChange={setSelectedSurah}

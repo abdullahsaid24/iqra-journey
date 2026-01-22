@@ -7,8 +7,10 @@ import { toast } from "sonner";
 import { debounce } from "lodash";
 import { getVerseMetadata } from "@/quran/lib/quran-api";
 import { AVAILABLE_SURAHS } from "@/quran/types/quran";
+import { JUZ_DATA } from "@/quran/types/juz";
 import { CompactSurahSelect } from "./CompactSurahSelect";
 import { CompactVerseSelect } from "./CompactVerseSelect";
+import { CompactJuzSelect } from "./CompactJuzSelect";
 import { MushafPdfViewer } from "./MushafPdfViewer";
 
 interface TanzilViewerProps {
@@ -30,6 +32,7 @@ export const TanzilViewer = ({
 }: TanzilViewerProps) => {
   const viewerRef = useRef<HTMLDivElement>(null);
   const [pageNumber, setPageNumber] = useState<number>(initialPage);
+  const [navigationJuz, setNavigationJuz] = useState<string>("");
   const [navigationSurah, setNavigationSurah] = useState<string>("");
   const [navigationVerse, setNavigationVerse] = useState<string>("");
 
@@ -147,6 +150,33 @@ export const TanzilViewer = ({
     }
   };
 
+  // Handle Juz selection - navigate to the beginning of the Juz
+  const handleJuzChange = async (juzNumber: string) => {
+    setNavigationJuz(juzNumber);
+    const juz = JUZ_DATA.find(j => j.number === parseInt(juzNumber));
+    if (juz) {
+      const surah = AVAILABLE_SURAHS.find(s => s.number === juz.startSurah);
+      if (surah) {
+        setNavigationSurah(surah.name);
+        setNavigationVerse(juz.startVerse.toString());
+
+        // Navigate to the Juz starting page
+        try {
+          const verseKey = `${juz.startSurah}:${juz.startVerse}`;
+          const metadata = await getVerseMetadata(verseKey);
+          setPageNumber(metadata.page_number);
+          if (onPageChange) {
+            onPageChange(metadata.page_number);
+          }
+          toast.success(`Navigated to Juz ${juzNumber}`);
+        } catch (error) {
+          console.error("Error navigating to Juz:", error);
+          toast.error("Failed to navigate to the selected Juz");
+        }
+      }
+    }
+  };
+
   // Effect to navigate to the selected verse's page when currentLesson changes
   useEffect(() => {
     const navigateToVerse = async () => {
@@ -252,6 +282,10 @@ export const TanzilViewer = ({
 
           <div className="flex flex-col items-center gap-1 sm:gap-2 flex-1">
             <div className="flex items-center gap-1 sm:gap-2 flex-wrap justify-center">
+              <CompactJuzSelect
+                selectedJuz={navigationJuz}
+                onJuzChange={handleJuzChange}
+              />
               <CompactSurahSelect
                 selectedSurah={navigationSurah}
                 onSurahChange={(surah) => {

@@ -4,8 +4,11 @@ import { supabase } from "@/quran/lib/supabase";
 import { toast } from "sonner";
 import { SurahSelect } from "./SurahSelect";
 import { VersesSelect } from "./VersesSelect";
+import { JuzSelect } from "./JuzSelect";
 import { Button } from "@/quran/components/ui/button";
 import { startOfMonth } from "date-fns";
+import { JUZ_DATA } from "@/quran/types/juz";
+import { AVAILABLE_SURAHS } from "@/quran/types/quran";
 
 interface GoalSettingFormProps {
   studentId: string;
@@ -13,8 +16,22 @@ interface GoalSettingFormProps {
 }
 
 export const GoalSettingForm = ({ studentId, onGoalSet }: GoalSettingFormProps) => {
+  const [selectedJuz, setSelectedJuz] = useState<string>("");
   const [selectedSurah, setSelectedSurah] = useState<string>("");
   const [selectedVerse, setSelectedVerse] = useState<string>("");
+
+  // Handle Juz selection - auto-fill Surah and Verse to the start of the Juz
+  const handleJuzChange = (juzNumber: string) => {
+    setSelectedJuz(juzNumber);
+    const juz = JUZ_DATA.find(j => j.number === parseInt(juzNumber));
+    if (juz) {
+      const surah = AVAILABLE_SURAHS.find(s => s.number === juz.startSurah);
+      if (surah) {
+        setSelectedSurah(surah.name);
+        setSelectedVerse(juz.startVerse.toString());
+      }
+    }
+  };
 
   const handleSetGoal = async () => {
     if (!selectedSurah || !selectedVerse) {
@@ -48,6 +65,10 @@ export const GoalSettingForm = ({ studentId, onGoalSet }: GoalSettingFormProps) 
 
   return (
     <div className="space-y-4">
+      <JuzSelect
+        selectedJuz={selectedJuz}
+        onJuzChange={handleJuzChange}
+      />
       <div className="grid grid-cols-2 gap-4">
         <div>
           <SurahSelect
