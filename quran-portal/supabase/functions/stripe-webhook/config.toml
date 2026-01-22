@@ -1,0 +1,4 @@
+
+project_id = "npyjkhnkdmksjqitmayi"
+[global.config]
+invoke_options = { auth = { require_authenticated = false } }

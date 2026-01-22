@@ -1,0 +1,2 @@
+// Use the centralized Supabase client to avoid multiple instances
+export { supabase } from '@/integrations/supabase/client';

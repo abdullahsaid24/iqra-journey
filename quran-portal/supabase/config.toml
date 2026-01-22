@@ -1,0 +1,10 @@
+project_id = "kkpfhpwgcyhlbuvjuzjt"
+
+[functions.sync-stripe-subscriptions]
+verify_jwt = false
+
+[functions.monthly-student-reset]
+verify_jwt = false
+
+[functions.process-registration]
+verify_jwt = true
