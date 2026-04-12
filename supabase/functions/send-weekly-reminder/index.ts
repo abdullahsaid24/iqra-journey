@@ -67,14 +67,21 @@ serve(async (req) => {
     const message = reminder.message;
     console.log(`Reminder message: "${message}"`);
 
-    // 2. Determine the target day name from the reminder_key
-    // reminder_key is "wednesday_class" or "thursday_class"
-    const dayName = reminder_key.replace('_class', '');
-    console.log(`Looking for classes with "${dayName}" in the name`);
+    // 2. Map reminder_key to exact class name
+    const classNameMap: Record<string, string> = {
+      'wednesday_class': 'Wednesday',
+      'thursday_class': 'Thursday',
+    };
 
-    // 3. Fetch classes whose name contains the day (case-insensitive)
+    const className = classNameMap[reminder_key];
+    if (!className) {
+      throw new Error(`Unknown reminder_key: ${reminder_key}. Expected "wednesday_class" or "thursday_class".`);
+    }
+    console.log(`Looking for class named "${className}"`);
+
+    // 3. Fetch the class by exact name
     const classesResponse = await fetch(
-      `${supabaseUrl}/rest/v1/classes?name=ilike.*${encodeURIComponent(dayName)}*&select=id,name`,
+      `${supabaseUrl}/rest/v1/classes?name=eq.${encodeURIComponent(className)}&select=id,name`,
       {
         headers: {
           'Content-Type': 'application/json',
@@ -87,15 +94,15 @@ serve(async (req) => {
     const classes = await classesResponse.json();
 
     if (!classes || classes.length === 0) {
-      console.log(`No classes found matching "${dayName}"`);
+      console.log(`No class found named "${className}"`);
       return new Response(
-        JSON.stringify({ success: true, message: `No classes found for ${dayName}`, sent: 0 }),
+        JSON.stringify({ success: true, message: `No class found named "${className}"`, sent: 0 }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
       );
     }
 
     const classIds = classes.map((c: any) => c.id);
-    console.log(`Found ${classes.length} class(es): ${classes.map((c: any) => c.name).join(', ')}`);
+    console.log(`Found class "${className}" with ${classes.length} match(es)`);
 
     // 4. Fetch all students in those classes
     const studentClassFilter = classIds.map((id: string) => `class_id.eq.${id}`).join(',');
