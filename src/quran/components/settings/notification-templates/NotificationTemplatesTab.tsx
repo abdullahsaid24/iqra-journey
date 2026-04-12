@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/quran/components/ui/
 import { ClassNotificationTemplates } from "./ClassNotificationTemplates";
 import { NotificationPresetManager } from "./NotificationPresetManager";
 import { GlobalMessagesTab } from "./GlobalMessagesTab";
+import { ScheduledRemindersTab } from "./ScheduledRemindersTab";
 type TemplateType = 'lesson_pass' | 'lesson_fail' | 'lesson_absent' | 'homework_assigned' | 'payment_failed';
 interface Template {
   id?: string;
@@ -141,11 +142,12 @@ export const NotificationTemplatesTab = () => {
   }];
   const [activeTab, setActiveTab] = useState("global");
   return <Tabs value={activeTab} onValueChange={setActiveTab}>
-    <TabsList className="w-full justify-start">
+    <TabsList className="w-full justify-start flex-wrap">
       <TabsTrigger value="global">Global Templates</TabsTrigger>
       <TabsTrigger value="class">Class Templates</TabsTrigger>
       <TabsTrigger value="presets">Presets</TabsTrigger>
       <TabsTrigger value="global-messages">Global Messages</TabsTrigger>
+      <TabsTrigger value="scheduled">Scheduled Reminders</TabsTrigger>
     </TabsList>
 
     <TabsContent value="global" className="mt-6">
@@ -208,6 +210,10 @@ export const NotificationTemplatesTab = () => {
 
     <TabsContent value="global-messages" className="mt-6">
       <GlobalMessagesTab />
+    </TabsContent>
+
+    <TabsContent value="scheduled" className="mt-6">
+      <ScheduledRemindersTab />
     </TabsContent>
   </Tabs>;
 };

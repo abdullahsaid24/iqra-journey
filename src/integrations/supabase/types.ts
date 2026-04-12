@@ -540,6 +540,36 @@ export type Database = {
         }
         Relationships: []
       }
+      scheduled_reminders: {
+        Row: {
+          id: string
+          reminder_key: string
+          message: string
+          is_enabled: boolean
+          send_time: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          reminder_key: string
+          message: string
+          is_enabled?: boolean
+          send_time?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          reminder_key?: string
+          message?: string
+          is_enabled?: boolean
+          send_time?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       student_feedback: {
         Row: {
           created_at: string
