@@ -5,6 +5,7 @@ import { Loader2 } from "lucide-react";
 import { Input } from "@/quran/components/ui/input";
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/quran/components/ui/dialog";
+import { supabase } from "@/quran/lib/supabase";
 interface Student {
   id: string;
   name: string;
@@ -35,6 +36,47 @@ export const StudentSelectionDialog = ({
 }: StudentSelectionDialogProps) => {
   const [filteredStudents, setFilteredStudents] = useState<Student[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [lastClassNames, setLastClassNames] = useState<Record<string, string>>({});
+
+  // Fetch last class name for unassigned students so teachers can tell duplicates apart
+  useEffect(() => {
+    if (!filterNoClass) return;
+
+    const fetchLastClasses = async () => {
+      const unassignedIds = students
+        .filter(s => !s.class_id)
+        .map(s => s.id);
+
+      if (unassignedIds.length === 0) {
+        setLastClassNames({});
+        return;
+      }
+
+      try {
+        const { data } = await supabase
+          .from('weekday_attendance')
+          .select('student_id, classes(name)')
+          .in('student_id', unassignedIds)
+          .order('attendance_date', { ascending: false });
+
+        if (!data) return;
+
+        // First occurrence per student_id = most recent class
+        const map: Record<string, string> = {};
+        data.forEach((record: any) => {
+          if (!map[record.student_id] && record.classes?.name) {
+            map[record.student_id] = record.classes.name;
+          }
+        });
+
+        setLastClassNames(map);
+      } catch (err) {
+        console.error('Error fetching last class names:', err);
+      }
+    };
+
+    fetchLastClasses();
+  }, [students, filterNoClass]);
   useEffect(() => {
     // Get students that are not adult students
     let filtered = students.filter(student => !adultStudents.some(adult => adult.id === student.id));
@@ -83,6 +125,11 @@ export const StudentSelectionDialog = ({
                       <Checkbox id={`selected-${student.id}`} checked={selectedStudents.includes(student.id)} onCheckedChange={() => onToggleStudent(student.id)} className="data-[state=checked]:bg-primary" />
                       <label htmlFor={`selected-${student.id}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                         {student.name}
+                        {filterNoClass && lastClassNames[student.id] && (
+                          <span className="text-xs text-muted-foreground ml-1 font-normal">
+                            (was in: {lastClassNames[student.id]})
+                          </span>
+                        )}
                       </label>
                     </div>)}
               </div>
@@ -95,6 +142,11 @@ export const StudentSelectionDialog = ({
                       <Checkbox id={`available-${student.id}`} checked={selectedStudents.includes(student.id)} onCheckedChange={() => onToggleStudent(student.id)} className="data-[state=checked]:bg-primary" />
                       <label htmlFor={`available-${student.id}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                         {student.name}
+                        {filterNoClass && lastClassNames[student.id] && (
+                          <span className="text-xs text-muted-foreground ml-1 font-normal">
+                            (was in: {lastClassNames[student.id]})
+                          </span>
+                        )}
                       </label>
                     </div>)}
               </div>}

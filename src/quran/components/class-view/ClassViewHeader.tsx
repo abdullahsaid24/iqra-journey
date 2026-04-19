@@ -265,10 +265,10 @@ export const ClassViewHeader = ({
     mutationFn: async (studentIds: string[]) => {
       console.log('Starting addStudentMutation with studentIds:', studentIds);
 
-      // Step A: Update the students' class_id to the current class
+      // Step A: Update the students' class_id to the current class and reset consecutive absences
       const { data: updatedStudents, error } = await supabase
         .from('students')
-        .update({ class_id: classId })
+        .update({ class_id: classId, consecutive_absences: 0 })
         .in('id', studentIds)
         .select('id, name, first_name, last_name, email, absence_level, failure_level, consecutive_absences, last_lesson_status');
 
@@ -308,6 +308,33 @@ export const ClassViewHeader = ({
               if (exists) {
                 console.log(`Skipping ${student.name} - already exists in linked class`);
                 skippedCount++;
+                continue;
+              }
+
+              // Check if there's an unassigned student record with matching name
+              // (e.g., previously auto-removed from the linked class)
+              const { data: unassignedMatch } = await supabase
+                .from('students')
+                .select('id')
+                .is('class_id', null)
+                .eq('name', student.name)
+                .neq('id', student.id)
+                .maybeSingle();
+
+              if (unassignedMatch) {
+                // Reconnect the existing record instead of creating a duplicate
+                console.log(`Reconnecting existing record for ${student.name} to linked class ${linkedClassId}`);
+                const { error: reconnectError } = await supabase
+                  .from('students')
+                  .update({ class_id: linkedClassId, consecutive_absences: 0 })
+                  .eq('id', unassignedMatch.id);
+
+                if (reconnectError) {
+                  console.error(`Failed to reconnect ${student.name}:`, reconnectError);
+                  failedCount++;
+                } else {
+                  createdCount++;
+                }
                 continue;
               }
 
