@@ -1,12 +1,14 @@
 
 import { Link } from "react-router-dom";
 import { Button } from "@/quran/components/ui/button";
-import { Calendar, MessageCircle } from "lucide-react";
+import { Calendar, MessageCircle, BellRing } from "lucide-react";
 import { useState } from "react";
 import { GlobalMessageDialog } from "./GlobalMessageDialog";
+import { AutoMessagesDialog } from "./AutoMessagesDialog";
 
 export const DashboardHeader = () => {
   const [isGlobalMessageOpen, setIsGlobalMessageOpen] = useState(false);
+  const [isAutoMessagesOpen, setIsAutoMessagesOpen] = useState(false);
 
   return (
     <div className="space-y-4">
@@ -26,6 +28,14 @@ export const DashboardHeader = () => {
             <MessageCircle className="h-4 w-4" />
             Global Message
           </Button>
+          <Button 
+            variant="outline" 
+            onClick={() => setIsAutoMessagesOpen(true)}
+            className="flex items-center gap-2"
+          >
+            <BellRing className="h-4 w-4" />
+            Auto Messages
+          </Button>
           <Button asChild variant="outline">
             <Link to="/quran/attendance-dashboard" className="flex items-center gap-2">
               <Calendar className="h-4 w-4" />
@@ -39,6 +49,11 @@ export const DashboardHeader = () => {
         open={isGlobalMessageOpen}
         onOpenChange={setIsGlobalMessageOpen}
       />
+      <AutoMessagesDialog
+        open={isAutoMessagesOpen}
+        onOpenChange={setIsAutoMessagesOpen}
+      />
     </div>
   );
 };
+
