@@ -221,6 +221,19 @@ export function ClassMessageDialog({
         }
       });
 
+      // Also mark students reachable if a linked-class counterpart (same name) is reachable
+      const reachableNames = new Set();
+      students.forEach(s => {
+        if (reachableStudentIds.has(s.id)) {
+          reachableNames.add(s.name);
+        }
+      });
+      students.forEach(s => {
+        if (reachableNames.has(s.name)) {
+          reachableStudentIds.add(s.id);
+        }
+      });
+
       // Deduplicate unreachable list by name (avoid linked-class duplicates)
       const seenNames = new Set();
       const unreachableStudents = students
@@ -232,7 +245,7 @@ export function ClassMessageDialog({
         })
         .map(s => ({
           name: s.name,
-          reason: (!s.email || !s.email.trim()) ? 'No email' : 'No phone number linked'
+          reason: 'No phone number linked'
         }));
       return {
         phoneNumbers: Array.from(phoneNumbers),
