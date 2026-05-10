@@ -362,9 +362,30 @@ export function ClassMessageDialog({
             rows={6}
             className="resize-none bg-white border-slate-200 focus:ring-quran-primary"
           />
-          <div className="text-xs text-slate-500 mt-1">
-            {message.length}/1600 characters (SMS limit)
-          </div>
+          {(() => {
+            const hasNonGSM = /[^\x20-\x7E\n\r@£$¥èéùìòÇØøÅåΔ_ΦΓΛΩΠΨΣΘΞÆæßÉÄÖÑÜäöñüà§¿¡¤]/.test(message);
+            const charLimit = hasNonGSM ? 70 : 160;
+            const multiLimit = hasNonGSM ? 67 : 153;
+            const segments = message.length === 0 ? 0 : message.length <= charLimit ? 1 : Math.ceil(message.length / multiLimit);
+            
+            return (
+              <div className="mt-1 space-y-1">
+                <div className="flex justify-between text-xs">
+                  <span className={hasNonGSM ? 'text-amber-600 font-medium' : 'text-slate-500'}>
+                    {message.length}/{charLimit} chars per segment {hasNonGSM ? '(Unicode - emojis detected!)' : '(GSM)'}
+                  </span>
+                  <span className={segments > 1 ? 'text-amber-600 font-medium' : 'text-slate-500'}>
+                    {segments} segment{segments !== 1 ? 's' : ''} per recipient
+                  </span>
+                </div>
+                {hasNonGSM && (
+                  <div className="text-xs text-amber-600 bg-amber-50 border border-amber-200 px-2 py-1 rounded">
+                    Emojis/special characters force Unicode encoding (70 chars/segment instead of 160). This costs 2-3x more. They will be stripped automatically when sent.
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </div>
 
         {/* Action Buttons */}

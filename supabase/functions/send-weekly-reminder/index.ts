@@ -183,6 +183,32 @@ serve(async (req) => {
       return new Response(JSON.stringify({ success: true, message: 'No phone numbers found', sent: 0 }), { headers: corsHeaders });
     }
 
+    // Strip non-GSM-7 characters (emojis, special unicode) to force cheaper GSM encoding
+    // GSM-7: 160 chars/segment vs UCS-2: 70 chars/segment (2-3x more expensive)
+    const stripToGSM = (text: string): string => {
+      const gsmChars = /^[@£$¥èéùìòÇ\nØø\rÅåΔ_ΦΓΛΩΠΨΣΘΞ ÆæßÉ!"#¤%&'()*+,\-.\/0-9:;<=>?¡A-Za-z ÄÖÑÜäöñüà§¿\^{}\[~\]|€\\]*$/;
+      
+      let result = '';
+      for (const char of text) {
+        if (gsmChars.test(char)) {
+          result += char;
+        } else {
+          const replacements: Record<string, string> = {
+            '\u2018': "'", '\u2019': "'",
+            '\u201C': '"', '\u201D': '"',
+            '\u2013': '-', '\u2014': '-',
+            '\u2026': '...',
+            '\u00A0': ' ',
+          };
+          result += replacements[char] || '';
+        }
+      }
+      return result.trim();
+    };
+
+    const cleanMessage = stripToGSM(message);
+    console.log(`Original message length: ${message.length}, Cleaned: ${cleanMessage.length}, Stripped ${message.length - cleanMessage.length} non-GSM chars`);
+
     // 5. Send via Twilio
     let sentCount = 0;
     let errorCount = 0;
@@ -199,7 +225,7 @@ serve(async (req) => {
         const formData = new URLSearchParams();
         formData.append('To', normalizedPhone);
         formData.append('From', twilioPhoneNumber);
-        formData.append('Body', message);
+        formData.append('Body', cleanMessage);
 
         const twilioRes = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${twilioSid}/Messages.json`, {
           method: 'POST',

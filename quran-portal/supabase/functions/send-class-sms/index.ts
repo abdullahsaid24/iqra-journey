@@ -188,6 +188,35 @@ Deno.serve(async (req) => {
     let messagesSent = 0;
     let messageErrors = [];
     
+    // Strip non-GSM-7 characters (emojis, special unicode) to force cheaper GSM encoding
+    // GSM-7: 160 chars/segment vs UCS-2: 70 chars/segment (2-3x more expensive)
+    const stripToGSM = (text) => {
+      // GSM 7-bit basic character set + extended
+      const gsmChars = /^[@£$¥èéùìòÇ\nØø\rÅåΔ_ΦΓΛΩΠΨΣΘΞ ÆæßÉ!"#¤%&'()*+,\-.\/0-9:;<=>?¡A-Za-z ÄÖÑÜäöñüà§¿\^{}\[~\]|€\\]*$/;
+      
+      let result = '';
+      for (const char of text) {
+        if (gsmChars.test(char)) {
+          result += char;
+        } else {
+          // Common replacements
+          const replacements = {
+            '\u2018': "'", '\u2019': "'", // smart quotes
+            '\u201C': '"', '\u201D': '"', // smart double quotes
+            '\u2013': '-', '\u2014': '-', // en/em dash
+            '\u2026': '...', // ellipsis
+            '\u00A0': ' ', // non-breaking space
+          };
+          result += replacements[char] || '';
+        }
+      }
+      return result.trim();
+    };
+
+    // Strip message to GSM-safe characters
+    const cleanMessage = stripToGSM(message);
+    console.log(`Original message length: ${message.length}, Cleaned: ${cleanMessage.length}, Stripped ${message.length - cleanMessage.length} non-GSM chars`);
+
     // Function to validate and format phone numbers
     const validateAndFormatPhone = (phoneNumber) => {
       if (!phoneNumber) return null;
@@ -211,7 +240,7 @@ Deno.serve(async (req) => {
         console.log(`Sending SMS to ${formattedPhone}`);
         
         const smsMessage = await client.messages.create({
-          body: message,
+          body: cleanMessage,
           from: twilioPhone,
           to: formattedPhone
         });
