@@ -185,11 +185,22 @@ export function ClassMessageDialog({
 
       // Find unreachable students (no phone number found via any route)
       const reachableStudentIds = new Set();
+
+      // Build set of parent_user_ids that have at least one phone number
+      const parentsWithPhone = new Set();
       parentLinks?.forEach(link => {
         if (link.phone_number?.trim() || link.secondary_phone_number?.trim()) {
-          reachableStudentIds.add(link.student_id);
+          parentsWithPhone.add(link.parent_user_id);
         }
       });
+
+      // Mark students reachable if their parent has ANY phone number
+      parentUserIds?.forEach(pul => {
+        if (parentsWithPhone.has(pul.parent_user_id)) {
+          reachableStudentIds.add(pul.student_id);
+        }
+      });
+
       // Also mark students reachable via adult_students table
       adultStudents?.forEach(adult => {
         if (adult.phone_number?.trim()) {
@@ -210,7 +221,15 @@ export function ClassMessageDialog({
         }
       });
 
-      const unreachableStudents = students.filter(s => !reachableStudentIds.has(s.id))
+      // Deduplicate unreachable list by name (avoid linked-class duplicates)
+      const seenNames = new Set();
+      const unreachableStudents = students
+        .filter(s => !reachableStudentIds.has(s.id))
+        .filter(s => {
+          if (seenNames.has(s.name)) return false;
+          seenNames.add(s.name);
+          return true;
+        })
         .map(s => ({
           name: s.name,
           reason: (!s.email || !s.email.trim()) ? 'No email' : 'No phone number linked'
