@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/quran/components/ui/dialog";
 import { Button } from "@/quran/components/ui/button";
 import { Textarea } from "@/quran/components/ui/textarea";
-import { Loader2, MessageCircle, Users } from "lucide-react";
+import { Loader2, MessageCircle, Users, AlertTriangle } from "lucide-react";
 import { supabase } from "@/quran/lib/supabase";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
@@ -59,25 +59,33 @@ export function ClassMessageDialog({
         return {
           phoneNumbers: [],
           students: [],
+          unreachableStudents: [],
           count: 0
         };
       }
+
+      // Get all class student IDs (for direct parent_student_links lookup)
+      const classStudentIds = students.map(s => s.id);
 
       // Get unique student emails (students can exist in multiple classes)
       const uniqueEmails = [...new Set(students.map(s => s.email).filter(Boolean))];
       console.log(`Found ${students.length} student records, ${uniqueEmails.length} unique emails`);
 
-      // Get ALL student IDs across all classes that match these emails
-      const {
-        data: allStudentMatches,
-        error: allStudentsError
-      } = await supabase.from('students').select('id, email').in('email', uniqueEmails);
-      if (allStudentsError) throw allStudentsError;
+      // Get ALL student IDs across all classes that match these emails (for sibling discovery)
+      let allStudentIds = [...classStudentIds];
+      if (uniqueEmails.length > 0) {
+        const {
+          data: allStudentMatches,
+          error: allStudentsError
+        } = await supabase.from('students').select('id, email').in('email', uniqueEmails);
+        if (allStudentsError) throw allStudentsError;
 
-      const allStudentIds = allStudentMatches?.map(s => s.id) || [];
-      console.log(`Found ${allStudentIds.length} total student IDs across all classes`);
+        const emailMatchedIds = allStudentMatches?.map(s => s.id) || [];
+        allStudentIds = [...new Set([...classStudentIds, ...emailMatchedIds])];
+      }
+      console.log(`Found ${allStudentIds.length} total student IDs (class + email-matched)`);
 
-      // Get parent_user_ids for these students
+      // Get parent_user_ids for ALL these students (including those with no email)
       const { data: parentUserIds, error: parentUserIdsError } = await supabase
         .from('parent_student_links')
         .select('parent_user_id, student_id')
@@ -98,35 +106,63 @@ export function ClassMessageDialog({
       if (parentError) throw parentError;
 
       // Get adult student phone numbers by email
-      const {
-        data: adultStudents,
-        error: adultError
-      } = await supabase.from('adult_students').select('phone_number, email').in('email', uniqueEmails);
-      if (adultError) throw adultError;
+      let adultStudents = [];
+      if (uniqueEmails.length > 0) {
+        const {
+          data,
+          error: adultError
+        } = await supabase.from('adult_students').select('phone_number, email').in('email', uniqueEmails);
+        if (adultError) throw adultError;
+        adultStudents = data || [];
+      }
 
       // Collect unique phone numbers
       const phoneNumbers = new Set();
-      const recipients = [];
+      const recipients: { phone: string; type: string; studentName: string }[] = [];
+      const addedPhones = new Set(); // track phones already added to recipients list
 
-      // Add parent numbers
+      // Build a map: student_id -> parent phones (only for class students)
+      const classStudentIdSet = new Set(students.map(s => s.id));
+
+      // Build parent_user_id -> class student names mapping
+      const parentToStudents = new Map<string, string[]>();
+      parentUserIds?.forEach(pul => {
+        const student = students.find(s => s.id === pul.student_id);
+        if (student) {
+          const existing = parentToStudents.get(pul.parent_user_id) || [];
+          if (!existing.includes(student.name)) existing.push(student.name);
+          parentToStudents.set(pul.parent_user_id, existing);
+        }
+      });
+
+      // Add parent numbers (grouped by parent, showing class student names)
       parentLinks?.forEach(link => {
-        const studentMatch = allStudentMatches?.find(s => s.id === link.student_id);
-        const student = students.find(s => s.email === studentMatch?.email);
+        const studentNames = parentToStudents.get(link.parent_user_id);
+        const displayName = studentNames?.join(', ') || 'Unknown';
+
         if (link.phone_number?.trim()) {
-          phoneNumbers.add(link.phone_number.trim());
-          recipients.push({
-            phone: link.phone_number.trim(),
-            type: 'Parent',
-            studentName: student?.name || 'Unknown'
-          });
+          const phone = link.phone_number.trim();
+          phoneNumbers.add(phone);
+          if (!addedPhones.has(phone)) {
+            addedPhones.add(phone);
+            recipients.push({
+              phone,
+              type: 'Parent',
+              studentName: displayName
+            });
+          }
         }
         if (link.secondary_phone_number?.trim()) {
-          phoneNumbers.add(link.secondary_phone_number.trim());
-          recipients.push({
-            phone: link.secondary_phone_number.trim(),
-            type: 'Parent (Secondary)',
-            studentName: student?.name || 'Unknown'
-          });
+          const phone = link.secondary_phone_number.trim();
+          phoneNumbers.add(phone);
+          if (!addedPhones.has(phone)) {
+            addedPhones.add(phone);
+            recipients.push({
+              phone,
+              type: 'Parent (Secondary)',
+              studentName: displayName
+            });
+          }
         }
       });
 
@@ -134,18 +170,56 @@ export function ClassMessageDialog({
       adultStudents?.forEach(adult => {
         const student = students.find(s => s.email === adult.email);
         if (adult.phone_number?.trim()) {
-          phoneNumbers.add(adult.phone_number.trim());
-          recipients.push({
-            phone: adult.phone_number.trim(),
-            type: 'Adult Student',
-            studentName: student?.name || 'Unknown'
-          });
+          const phone = adult.phone_number.trim();
+          phoneNumbers.add(phone);
+          if (!addedPhones.has(phone)) {
+            addedPhones.add(phone);
+            recipients.push({
+              phone,
+              type: 'Adult Student',
+              studentName: student?.name || 'Unknown'
+            });
+          }
         }
       });
+
+      // Find unreachable students (no phone number found via any route)
+      const reachableStudentIds = new Set();
+      parentLinks?.forEach(link => {
+        if (link.phone_number?.trim() || link.secondary_phone_number?.trim()) {
+          reachableStudentIds.add(link.student_id);
+        }
+      });
+      // Also mark students reachable via adult_students table
+      adultStudents?.forEach(adult => {
+        if (adult.phone_number?.trim()) {
+          const matchingStudents = students.filter(s => s.email === adult.email);
+          matchingStudents.forEach(s => reachableStudentIds.add(s.id));
+        }
+      });
+      // Also mark students reachable via sibling (same email as a reachable student)
+      const reachableEmails = new Set();
+      students.forEach(s => {
+        if (reachableStudentIds.has(s.id) && s.email) {
+          reachableEmails.add(s.email);
+        }
+      });
+      students.forEach(s => {
+        if (s.email && reachableEmails.has(s.email)) {
+          reachableStudentIds.add(s.id);
+        }
+      });
+
+      const unreachableStudents = students.filter(s => !reachableStudentIds.has(s.id))
+        .map(s => ({
+          name: s.name,
+          reason: (!s.email || !s.email.trim()) ? 'No email' : 'No phone number linked'
+        }));
       return {
         phoneNumbers: Array.from(phoneNumbers),
         recipients,
         students,
+        unreachableStudents,
         count: phoneNumbers.size
       };
     },
@@ -220,6 +294,28 @@ export function ClassMessageDialog({
             </div>
           </div>}
         </div>
+
+        {/* Unreachable Students Warning */}
+        {recipientData && recipientData.unreachableStudents && recipientData.unreachableStudents.length > 0 && (
+          <div className="bg-amber-50 border border-amber-200 p-3 rounded-lg">
+            <div className="flex items-center gap-2 mb-2">
+              <AlertTriangle className="h-4 w-4 text-amber-600" />
+              <span className="text-sm font-medium text-amber-900">
+                {recipientData.unreachableStudents.length} student{recipientData.unreachableStudents.length !== 1 ? 's' : ''} will NOT receive this message
+              </span>
+            </div>
+            <div className="max-h-28 overflow-y-auto">
+              <div className="space-y-1">
+                {recipientData.unreachableStudents.map((student, index) => (
+                  <div key={index} className="text-xs text-amber-800 flex justify-between">
+                    <span>{student.name}</span>
+                    <span className="text-amber-600">{student.reason}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Message Input */}
         <div>

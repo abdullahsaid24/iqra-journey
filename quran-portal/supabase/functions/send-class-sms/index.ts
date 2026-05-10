@@ -67,24 +67,32 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Get all class student IDs (for direct parent_student_links lookup)
+    const classStudentIds = classStudents.map(s => s.id);
+
     // Get unique student emails (students can exist in multiple classes)
     const uniqueEmails = [...new Set(classStudents.map(s => s.email).filter(Boolean))];
-    console.log(`Found ${classStudents.length} student records, ${uniqueEmails.length} unique students`);
+    console.log(`Found ${classStudents.length} student records, ${uniqueEmails.length} unique emails, ${classStudentIds.length} student IDs`);
 
-    // Get ALL student IDs across all classes that match these emails
-    const { data: allStudentMatches, error: allStudentsError } = await supabaseClient
-      .from('students')
-      .select('id')
-      .in('email', uniqueEmails);
-    
-    if (allStudentsError) {
-      throw new Error(`Error fetching all student matches: ${allStudentsError.message}`)
+    // Get ALL student IDs across all classes that match these emails (for sibling discovery)
+    let allStudentIds = [...classStudentIds];
+    if (uniqueEmails.length > 0) {
+      const { data: allStudentMatches, error: allStudentsError } = await supabaseClient
+        .from('students')
+        .select('id')
+        .in('email', uniqueEmails);
+      
+      if (allStudentsError) {
+        throw new Error(`Error fetching all student matches: ${allStudentsError.message}`)
+      }
+
+      // Merge email-matched IDs with direct class student IDs
+      const emailMatchedIds = allStudentMatches?.map(s => s.id) || [];
+      allStudentIds = [...new Set([...classStudentIds, ...emailMatchedIds])];
     }
-
-    const allStudentIds = allStudentMatches?.map(s => s.id) || [];
-    console.log(`Found ${allStudentIds.length} total student IDs across all classes`);
+    console.log(`Found ${allStudentIds.length} total student IDs (class + email-matched)`);
     
-    // Get parent_user_ids for these students
+    // Get parent_user_ids for ALL these students (including those with no email)
     const { data: parentUserIds, error: parentUserIdsError } = await supabaseClient
       .from('parent_student_links')
       .select('parent_user_id')
@@ -109,14 +117,18 @@ Deno.serve(async (req) => {
     }
     
     // Get adult student phone numbers by email
-    const { data: adultStudentPhoneData, error: adultStudentPhoneError } = await supabaseClient
-      .from('adult_students')
-      .select('phone_number')
-      .in('email', uniqueEmails)
-      .not('phone_number', 'is', null);
-      
-    if (adultStudentPhoneError) {
-      throw new Error(`Error fetching adult student phone numbers: ${adultStudentPhoneError.message}`)
+    let adultStudentPhoneData = [];
+    if (uniqueEmails.length > 0) {
+      const { data, error: adultStudentPhoneError } = await supabaseClient
+        .from('adult_students')
+        .select('phone_number')
+        .in('email', uniqueEmails)
+        .not('phone_number', 'is', null);
+        
+      if (adultStudentPhoneError) {
+        throw new Error(`Error fetching adult student phone numbers: ${adultStudentPhoneError.message}`)
+      }
+      adultStudentPhoneData = data || [];
     }
     
     // Collect all phone numbers and deduplicate

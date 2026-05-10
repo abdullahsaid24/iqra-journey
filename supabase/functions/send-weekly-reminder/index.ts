@@ -126,21 +126,22 @@ serve(async (req) => {
     }
 
     const uniqueEmails = [...new Set(students.map(s => s.email).filter(Boolean))];
-    console.log(`Found ${uniqueEmails.length} unique student emails.`);
-    if (uniqueEmails.length === 0) {
-      console.log('No student emails found, aborting.');
-      return new Response(JSON.stringify({ success: true, message: 'No student emails found', sent: 0 }), { headers: corsHeaders });
-    }
+    const classStudentIds = students.map(s => s.id);
+    console.log(`Found ${uniqueEmails.length} unique student emails, ${classStudentIds.length} student IDs.`);
     
     // Find ALL student profiles for these emails to catch parents cross-linked to siblings
-    const { data: allStudentMatches } = await supabase
-      .from('students')
-      .select('id')
-      .in('email', uniqueEmails);
+    let allStudentIds = [...classStudentIds];
+    if (uniqueEmails.length > 0) {
+      const { data: allStudentMatches } = await supabase
+        .from('students')
+        .select('id')
+        .in('email', uniqueEmails);
       
-    const allStudentIds = allStudentMatches?.map(s => s.id) || [];
+      const emailMatchedIds = allStudentMatches?.map(s => s.id) || [];
+      allStudentIds = [...new Set([...classStudentIds, ...emailMatchedIds])];
+    }
 
-    // Get parent routing
+    // Get parent routing (using ALL student IDs, including those with no email)
     const { data: parentUserIds } = await supabase
       .from('parent_student_links')
       .select('parent_user_id')
@@ -155,10 +156,14 @@ serve(async (req) => {
       .in('parent_user_id', uniqueParentUserIds);
 
     // Grab phones for adults
-    const { data: adultStudents } = await supabase
-      .from('adult_students')
-      .select('phone_number')
-      .in('email', uniqueEmails);
+    let adultStudents: any[] = [];
+    if (uniqueEmails.length > 0) {
+      const { data } = await supabase
+        .from('adult_students')
+        .select('phone_number')
+        .in('email', uniqueEmails);
+      adultStudents = data || [];
+    }
 
     const phoneNumbers = new Set<string>();
 

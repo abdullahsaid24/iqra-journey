@@ -4,7 +4,7 @@
 -- Problems fixed:
 -- 1. Running counter could double-increment on upsert (teacher re-submits same day)
 -- 2. Counter didn't verify absences were truly on consecutive dates
--- 3. Threshold changed from 4 to 3 per requirements
+-- 3. Threshold changed from 4 to 8 per requirements
 --
 -- New approach: Recalculate the consecutive absence streak from the most recent
 -- attendance records every time, making it idempotent and accurate.
@@ -61,9 +61,9 @@ BEGIN
       WHEN monthly_absences_count >= 1 THEN 2
       ELSE 1
     END,
-    -- AUTO-REMOVE: clear class_id after 3 consecutive absences
+    -- AUTO-REMOVE: clear class_id after 8 consecutive absences
     class_id = CASE 
-      WHEN consecutive_count >= 3 THEN NULL 
+      WHEN consecutive_count >= 8 THEN NULL 
       ELSE class_id 
     END
   WHERE id = NEW.student_id;

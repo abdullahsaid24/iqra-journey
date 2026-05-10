@@ -1,4 +1,4 @@
--- Update the trigger function to auto-remove students after 4 consecutive absences
+-- Update the trigger function to auto-remove students after 8 consecutive absences
 -- Student record is preserved but class_id is set to NULL
 CREATE OR REPLACE FUNCTION public.update_student_absence_level()
 RETURNS trigger
@@ -30,9 +30,9 @@ BEGIN
         WHEN monthly_absences_count >= 1 THEN 2
         ELSE 1
       END,
-      -- AUTO-REMOVE: clear class_id after 4 consecutive absences
+      -- AUTO-REMOVE: clear class_id after 8 consecutive absences
       class_id = CASE 
-        WHEN new_consecutive_absences >= 4 THEN NULL 
+        WHEN new_consecutive_absences >= 8 THEN NULL 
         ELSE class_id 
       END
     WHERE id = NEW.student_id;
