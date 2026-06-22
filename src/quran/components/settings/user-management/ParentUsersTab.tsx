@@ -19,6 +19,7 @@ interface ParentUsersTabProps {
   refetchUsers: () => void;
   refetchStudents: () => void;
   students: any[];
+  searchQuery?: string;
 }
 
 export const ParentUsersTab = ({
@@ -28,7 +29,8 @@ export const ParentUsersTab = ({
   refetchParents,
   refetchUsers,
   refetchStudents,
-  students
+  students,
+  searchQuery = ""
 }: ParentUsersTabProps) => {
   const [selectedParentId, setSelectedParentId] = useState<string>("");
   const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
@@ -252,6 +254,7 @@ export const ParentUsersTab = ({
     <>
       <ParentTable 
         parents={parents} 
+        searchQuery={searchQuery}
         onManageStudents={(parentId, currentStudents) => {
           setSelectedParentId(parentId);
           setSelectedStudents((currentStudents || []).map(s => s.id));

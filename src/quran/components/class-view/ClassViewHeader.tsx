@@ -14,6 +14,7 @@ import { supabase } from "@/quran/lib/supabase";
 import { toast } from "sonner";
 import { StudentSelectionDialog } from "@/quran/components/settings/user-management/StudentSelectionDialog";
 import { useStudents } from "@/quran/components/settings/user-management/hooks/useStudents";
+import { NotifyAbsentButton } from "@/quran/components/attendance/NotifyAbsentButton";
 interface ClassViewHeaderProps {
   classData: ClassWithStudents;
   classId: string;
@@ -480,6 +481,8 @@ export const ClassViewHeader = ({
         <span className="hidden sm:inline">Send Message</span>
         <span className="sm:hidden">Message</span>
       </Button>
+
+      <NotifyAbsentButton classId={classId} />
 
       {students && students.length > 0 && <>
         <Button variant="destructive" size="sm" onClick={() => setIsRemovalDialogOpen(true)} className="flex items-center gap-1 bg-red-600 hover:bg-red-500 text-neutral-50 text-xs sm:text-sm px-2 sm:px-3">

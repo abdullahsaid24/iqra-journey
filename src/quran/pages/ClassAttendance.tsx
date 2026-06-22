@@ -10,6 +10,7 @@ import { useWeekdayAttendance } from "@/quran/hooks/useWeekdayAttendance";
 import { NotificationPresetSelect } from "@/quran/components/quran/NotificationPresetSelect";
 import { AttendanceHistory } from "@/quran/components/attendance/AttendanceHistory";
 import { MonthlyAbsenceBadge } from "@/quran/components/attendance/MonthlyAbsenceBadge";
+import { NotifyAbsentButton } from "@/quran/components/attendance/NotifyAbsentButton";
 
 const getAttendanceTitle = (classId: string | undefined) => {
   if (!classId) return 'Class Attendance';
@@ -179,6 +180,7 @@ const ClassAttendance = () => {
             </Button>
 
             {classId && <AttendanceHistory classId={classId} />}
+            {classId && <NotifyAbsentButton classId={classId} />}
           </div>
         </div>
 

@@ -16,8 +16,8 @@ interface TabsContentProps {
   refetchStudents: () => void;
   students: any[];
   regularStudentUsers: any[];
-  adultStudentUsers: any[];
   filteredUsers: any[];
+  searchQuery?: string;
 }
 
 export const UserTabsContent = ({
@@ -31,7 +31,8 @@ export const UserTabsContent = ({
   students,
   regularStudentUsers,
   adultStudentUsers,
-  filteredUsers
+  filteredUsers,
+  searchQuery = ""
 }: TabsContentProps) => {
   return (
     <>
@@ -48,11 +49,15 @@ export const UserTabsContent = ({
           refetchUsers={refetchUsers}
           refetchStudents={refetchStudents}
           students={students}
+          searchQuery={searchQuery}
         />
       </TabsContent>
       
       <TabsContent value="student" className="mt-6">
-        <StudentUsersTab users={regularStudentUsers} />
+        <StudentUsersTab 
+          students={students} 
+          searchQuery={searchQuery}
+        />
       </TabsContent>
       
       <TabsContent value="adult_student" className="mt-6">

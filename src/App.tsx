@@ -29,6 +29,7 @@ import QuranSettings from "@/quran/pages/Settings";
 import QuranParentDashboard from "@/quran/pages/ParentDashboard";
 import QuranParentChildView from "@/quran/pages/ParentChildView";
 import QuranAttendanceDashboard from "@/quran/pages/AttendanceDashboard";
+import SelfCheckIn from "@/quran/pages/SelfCheckIn";
 import { ProtectedRoute } from "@/quran/components/routing/ProtectedRoute";
 import { AdminTeacherRoute } from "@/quran/components/routing/AdminTeacherRoute";
 import { ParentRoute } from "@/quran/components/routing/ParentRoute";
@@ -51,6 +52,9 @@ function App() {
               <Route path="/signup" element={<Signup />} />
               <Route path="/success" element={<Success />} />
               <Route path="/admin" element={<Admin />} />
+
+              {/* Public check-in route (QR code landing) */}
+              <Route path="/checkin" element={<SelfCheckIn />} />
 
               {/* Quran Portal routes */}
               <Route path="/quran" element={<QuranLanding />} />

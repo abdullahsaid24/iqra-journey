@@ -23,6 +23,7 @@ export interface ParentTableProps {
   onEditEmail: (parentId: string, email: string) => void;
   onEditPhone: (parentId: string, phoneNumber: string) => void;
   onDelete: (parentId: string) => void;
+  searchQuery?: string;
 }
 
 export interface AdultStudent {

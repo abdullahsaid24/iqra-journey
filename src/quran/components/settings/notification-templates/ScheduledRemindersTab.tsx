@@ -130,9 +130,13 @@ export const ScheduledRemindersTab = () => {
       return data;
     },
     onSuccess: (data) => {
-      toast.success(
-        `Test sent! ${data.sent || 0} messages delivered, ${data.errors || 0} errors`
-      );
+      if (data.message && data.sent === 0) {
+        toast.info(`Test result: ${data.message}`);
+      } else {
+        toast.success(
+          `Test sent! ${data.sent || 0} messages delivered, ${data.errors || 0} errors`
+        );
+      }
       setTestingKey(null);
     },
     onError: (error: any) => {

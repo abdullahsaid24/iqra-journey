@@ -78,6 +78,7 @@ export const UserManagementTab = () => {
               regularStudentUsers={regularStudentUsers}
               adultStudentUsers={adultStudentUsers}
               filteredUsers={filteredUsers}
+              searchQuery={searchQuery}
             />
           </Tabs>
         </div>

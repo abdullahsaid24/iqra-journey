@@ -3,7 +3,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ParentTableRow } from "./ParentTableRow";
 import type { ParentTableProps } from "./types";
 import { Input } from "@/quran/components/ui/input";
-import { useState } from "react";
 import { Search } from "lucide-react";
 
 export const ParentTable = ({
@@ -12,9 +11,8 @@ export const ParentTable = ({
   onEditEmail,
   onEditPhone,
   onDelete,
+  searchQuery = "",
 }: ParentTableProps) => {
-  const [searchQuery, setSearchQuery] = useState("");
-
   // Filter parents based on student name search
   const filteredParents = parents.filter(parent => {
     const studentNames = parent.students?.map(s => s.name.toLowerCase()) || [];
@@ -31,17 +29,6 @@ export const ParentTable = ({
 
   return (
     <div className="space-y-4">
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={18} />
-        <Input
-          type="search"
-          placeholder="Search by student name, parent name or email..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10 max-w-sm border-slate-200 focus:border-quran-primary focus:ring-quran-primary bg-white text-slate-900 placeholder:text-slate-400"
-        />
-      </div>
-
       <Table className="border rounded-md border-slate-200">
         <TableHeader className="bg-slate-50">
           <TableRow>
