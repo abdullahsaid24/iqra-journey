@@ -136,8 +136,8 @@ export const WeekdayAttendance = ({
       if (message) {
         const className = getClassNameFromId(classId);
         const formattedMessage = message
-          .replace('{{student_name}}', selectedStudent.name)
-          .replace('{{class_name}}', className);
+          .replace(/\{\{?student_?name\}\}?/gi, selectedStudent.name)
+          .replace(/\{\{?class_?name\}\}?/gi, className);
         try {
           const { data, error } = await supabase.functions.invoke('send-sms', {
             body: {
@@ -205,8 +205,8 @@ export const WeekdayAttendance = ({
         if (presets && presets.length > 0) {
           const className = getClassNameFromId(classId);
           message = presets[0].content
-            .replace('{{student_name}}', student.name)
-            .replace('{{class_name}}', className);
+            .replace(/\{\{?student_?name\}\}?/gi, student.name)
+            .replace(/\{\{?class_?name\}\}?/gi, className);
         }
 
         // Mark attendance

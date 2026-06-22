@@ -95,13 +95,17 @@ export const LessonStatus = ({ studentId, currentLesson, onStatusUpdate, student
         
         // Replace student name placeholder
         if (studentName) {
-          processedMessage = processedMessage.replace(/{{student_name}}/g, studentName);
+          processedMessage = processedMessage.replace(/\{\{?student_?name\}\}?/gi, studentName);
         }
         
+        // Replace class name if available (sometimes teachers use it here too)
+        // We'd need to know the class name here, but we don't readily have it.
+        // We'll leave it as is, or we could fetch it, but usually this is just lesson status.
+
         // Replace surah and verses placeholders with actual values
         if (currentLesson) {
-          processedMessage = processedMessage.replace(/{{surah}}/g, currentLesson.surah);
-          processedMessage = processedMessage.replace(/{{verses}}/g, currentLesson.verses);
+          processedMessage = processedMessage.replace(/\{\{?surah\}\}?/gi, currentLesson.surah);
+          processedMessage = processedMessage.replace(/\{\{?verses\}\}?/gi, currentLesson.verses);
         }
         
         // Ensure phone number is properly formatted

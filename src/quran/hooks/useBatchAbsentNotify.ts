@@ -125,7 +125,14 @@ export const useBatchAbsentNotify = (classId: string | undefined) => {
           }
 
           // 3. Replace {{student_name}} placeholder with the student's name
-          const smsMessage = presets[0].content.replace(/\{\{student_name\}\}/g, student.name);
+          let className = 'Quran Class';
+          if (classId) {
+            const { data: cData } = await supabase.from('classes').select('name').eq('id', classId).single();
+            if (cData?.name) className = cData.name;
+          }
+          const smsMessage = presets[0].content
+            .replace(/\{\{?student_?name\}\}?/gi, student.name)
+            .replace(/\{\{?class_?name\}\}?/gi, className);
 
           // 4. Send SMS via edge function
           const { error: smsError } = await supabase.functions.invoke('send-sms', {

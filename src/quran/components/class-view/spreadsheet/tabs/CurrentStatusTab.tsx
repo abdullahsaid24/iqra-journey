@@ -19,6 +19,17 @@ interface CurrentStatusTabProps {
   onStudentSelect: (studentId: string) => void;
 }
 
+const getClassNameFromId = (classId?: string): string => {
+  if (!classId) return 'class';
+  const classNames: Record<string, string> = {
+    'a6184b1b-6299-4d0c-9f17-6cbf68591a35': 'Monday',
+    'c44e5a86-41ef-4714-90c8-542bf6fdf9e4': 'Friday',
+    '74410dba-7cee-41ab-81c0-a8bbe3e7a042': 'Wednesday',
+    'ee5cf54f-e467-4654-8d7e-051a259d27e4': 'Thursday'
+  };
+  return classNames[classId] || 'class';
+};
+
 export const CurrentStatusTab = ({ classId, onStudentSelect }: CurrentStatusTabProps) => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
@@ -121,7 +132,10 @@ export const CurrentStatusTab = ({ classId, onStudentSelect }: CurrentStatusTabP
       }
 
       try {
-        const formattedMessage = message.replace('{{student_name}}', selectedStudent.name);
+        const className = getClassNameFromId(classId);
+        const formattedMessage = message
+          .replace(/\{\{?student_?name\}\}?/gi, selectedStudent.name)
+          .replace(/\{\{?class_?name\}\}?/gi, className);
         console.log("Sending SMS notification for student:", selectedStudent.id, "with message:", formattedMessage);
 
         const response = await supabase.functions.invoke('send-sms', {
@@ -250,7 +264,10 @@ export const CurrentStatusTab = ({ classId, onStudentSelect }: CurrentStatusTabP
 
         let message = '';
         if (presets && presets.length > 0) {
-          message = presets[0].content.replace('{{student_name}}', student.name);
+          const className = getClassNameFromId(classId);
+          message = presets[0].content
+            .replace(/\{\{?student_?name\}\}?/gi, student.name)
+            .replace(/\{\{?class_?name\}\}?/gi, className);
         }
 
         const { data: { user } } = await supabase.auth.getUser();

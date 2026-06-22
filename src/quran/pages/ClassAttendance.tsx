@@ -82,7 +82,9 @@ const ClassAttendance = () => {
       toast.success(`Marked ${selectedStudent.name} as absent`);
 
       if (message) {
-        const formattedMessage = message.replace('{{student_name}}', selectedStudent.name);
+        const formattedMessage = message
+          .replace(/\{\{?student_?name\}\}?/gi, selectedStudent.name)
+          .replace(/\{\{?class_?name\}\}?/gi, classData?.name || 'class');
 
         try {
           const { data, error } = await supabase.functions.invoke('send-sms', {
