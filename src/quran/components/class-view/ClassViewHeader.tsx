@@ -63,7 +63,8 @@ export const ClassViewHeader = ({
         data,
         error
       } = await supabase.from('students').update({
-        class_id: targetClassId
+        class_id: targetClassId,
+        removed_from_class_id: null
       }).eq('id', studentId).select();
       if (error) throw error;
       return data;
@@ -93,14 +94,17 @@ export const ClassViewHeader = ({
     }
   });
 
-  // Modified to use update instead of delete
+  // Modified to use update instead of delete.
+  // Records which class the student was removed from so that re-adding them
+  // later reconnects the correct record instead of an arbitrary same-name one.
   const removeStudentMutation = useMutation({
     mutationFn: async (studentId: string) => {
       const {
         data,
         error
       } = await supabase.from('students').update({
-        class_id: null
+        class_id: null,
+        removed_from_class_id: classId
       }).eq('id', studentId).select();
       if (error) throw error;
       return data;
@@ -157,11 +161,11 @@ export const ClassViewHeader = ({
           .select('id')
           .eq('class_id', classId)
           .eq('email', student.email)
-          .maybeSingle();
+          .limit(1);
 
         if (error) {
           console.error('Error in email check:', error);
-        } else if (data) {
+        } else if (data && data.length > 0) {
           console.log('Found existing student by email');
           return true;
         }
@@ -173,14 +177,14 @@ export const ClassViewHeader = ({
         .select('id')
         .eq('class_id', classId)
         .eq('name', student.name)
-        .maybeSingle();
+        .limit(1);
 
       if (error) {
         console.error('Error in name check:', error);
         return false;
       }
 
-      const exists = !!data;
+      const exists = data && data.length > 0;
       console.log(`Student ${student.name} exists in class: ${exists}`);
       return exists;
     } catch (error) {
@@ -269,7 +273,7 @@ export const ClassViewHeader = ({
       // Step A: Update the students' class_id to the current class and reset consecutive absences
       const { data: updatedStudents, error } = await supabase
         .from('students')
-        .update({ class_id: classId, consecutive_absences: 0 })
+        .update({ class_id: classId, consecutive_absences: 0, removed_from_class_id: null })
         .in('id', studentIds)
         .select('id, name, first_name, last_name, email, absence_level, failure_level, consecutive_absences, last_lesson_status');
 
@@ -312,22 +316,28 @@ export const ClassViewHeader = ({
                 continue;
               }
 
-              // Check if there's an unassigned student record with matching name
-              // (e.g., previously auto-removed from the linked class)
-              const { data: unassignedMatch } = await supabase
+              // Look for an unassigned record that was removed from THIS linked
+              // class specifically. Matching on name alone picked an arbitrary
+              // orphan (no ORDER BY on a LIMIT 1), which swapped weekday and
+              // weekend history between rows when a student had several.
+              const { data: unassignedMatches } = await supabase
                 .from('students')
                 .select('id')
                 .is('class_id', null)
+                .eq('removed_from_class_id', linkedClassId)
                 .eq('name', student.name)
                 .neq('id', student.id)
-                .maybeSingle();
+                .order('updated_at', { ascending: false })
+                .limit(1);
+
+              const unassignedMatch = unassignedMatches && unassignedMatches.length > 0 ? unassignedMatches[0] : null;
 
               if (unassignedMatch) {
                 // Reconnect the existing record instead of creating a duplicate
                 console.log(`Reconnecting existing record for ${student.name} to linked class ${linkedClassId}`);
                 const { error: reconnectError } = await supabase
                   .from('students')
-                  .update({ class_id: linkedClassId, consecutive_absences: 0 })
+                  .update({ class_id: linkedClassId, consecutive_absences: 0, removed_from_class_id: null })
                   .eq('id', unassignedMatch.id);
 
                 if (reconnectError) {

@@ -40,10 +40,12 @@ const ClassView = () => {
   // Modified mutation to update instead of delete
   const removeStudentMutation = useMutation({
     mutationFn: async (studentId: string) => {
-      // Instead of deleting, update the student to remove class association
+      // Instead of deleting, update the student to remove class association.
+      // Record the class so re-adding reconnects this exact record rather than
+      // an arbitrary same-name one (which swapped weekday/weekend history).
       const { data, error } = await supabase
         .from('students')
-        .update({ class_id: null })
+        .update({ class_id: null, removed_from_class_id: classId })
         .eq('id', studentId)
         .select();
 
