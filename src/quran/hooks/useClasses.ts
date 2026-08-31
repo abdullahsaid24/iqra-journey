@@ -14,11 +14,7 @@ export const useClasses = (userRole: string | null) => {
         .from('classes')
         .select(`
           id,
-          name,
-          students!fk_students_class (
-            id,
-            name
-          )
+          name
         `);
 
       if (userRole === 'teacher') {
@@ -39,14 +35,48 @@ export const useClasses = (userRole: string | null) => {
       }
 
       const { data: classes, error: classesError } = await query;
-      
+
       if (classesError) {
         console.error('Error fetching classes:', classesError);
         return [];
       }
 
+      // Each child has one row, parked on the weekend side of a linked pair, and
+      // belongs to both classes in that pair. Resolve the roster here rather than
+      // with an embedded select on class_id, which would leave weekday classes
+      // looking empty.
+      const [{ data: links }, { data: allStudents }] = await Promise.all([
+        supabase.from('class_links').select('weekday_class_id, weekend_class_id'),
+        supabase.from('students').select('id, name, class_id').not('class_id', 'is', null),
+      ]);
+
+      const counterpartOf = new Map<string, string>();
+      (links || []).forEach(l => {
+        if (l.weekday_class_id && l.weekend_class_id) {
+          counterpartOf.set(l.weekday_class_id, l.weekend_class_id);
+          counterpartOf.set(l.weekend_class_id, l.weekday_class_id);
+        }
+      });
+
+      const studentsByClass = new Map<string, { id: string; name: string }[]>();
+      (allStudents || []).forEach(s => {
+        const bucket = studentsByClass.get(s.class_id!) || [];
+        bucket.push({ id: s.id, name: s.name });
+        studentsByClass.set(s.class_id!, bucket);
+      });
+
+      const rosterFor = (classId: string) => {
+        const own = studentsByClass.get(classId) || [];
+        const linked = counterpartOf.get(classId);
+        return linked ? [...own, ...(studentsByClass.get(linked) || [])] : own;
+      };
+
       // For each class, fetch its teachers
-      const classesWithTeachers = await Promise.all(classes.map(async (classItem) => {
+      const classesWithTeachers = await Promise.all(classes.map(async (row) => {
+        const classItem: ClassWithStudents = {
+          ...row,
+          students: rosterFor(row.id)
+        } as ClassWithStudents;
         const { data: teacherLinks, error: teachersError } = await supabase
           .from('class_teachers')
           .select('user_id')
