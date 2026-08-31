@@ -180,6 +180,8 @@ export type Database = {
           type: string | null
           updated_at: string
           verses: string
+          min_listens: number | null
+          listen_count: number | null
         }
         Insert: {
           assigned_by: string
@@ -192,6 +194,8 @@ export type Database = {
           type?: string | null
           updated_at?: string
           verses: string
+          min_listens?: number | null
+          listen_count?: number | null
         }
         Update: {
           assigned_by?: string
@@ -204,6 +208,8 @@ export type Database = {
           type?: string | null
           updated_at?: string
           verses?: string
+          min_listens?: number | null
+          listen_count?: number | null
         }
         Relationships: [
           {
@@ -220,6 +226,48 @@ export type Database = {
             referencedRelation: "students"
             referencedColumns: ["id"]
           },
+        ]
+      }
+      homework_listen_logs: {
+        Row: {
+          id: string
+          homework_id: string
+          student_id: string
+          listened_by: string
+          ayah_key: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          homework_id: string
+          student_id: string
+          listened_by: string
+          ayah_key: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          homework_id?: string
+          student_id?: string
+          listened_by?: string
+          ayah_key?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "homework_listen_logs_homework_id_fkey"
+            columns: ["homework_id"]
+            isOneToOne: false
+            referencedRelation: "homework_assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "homework_listen_logs_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          }
         ]
       }
       lessons: {
@@ -678,6 +726,7 @@ export type Database = {
           last_lesson_status: string | null
           last_name: string | null
           name: string
+          removed_from_class_id: string | null
           updated_at: string
         }
         Insert: {
@@ -692,6 +741,7 @@ export type Database = {
           last_lesson_status?: string | null
           last_name?: string | null
           name: string
+          removed_from_class_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -706,9 +756,17 @@ export type Database = {
           last_lesson_status?: string | null
           last_name?: string | null
           name?: string
+          removed_from_class_id?: string | null
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "students_removed_from_class_id_fkey"
+            columns: ["removed_from_class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "fk_students_class"
             columns: ["class_id"]

@@ -23,7 +23,7 @@ export const TransferClassButton = ({ studentId, currentClassId }: TransferClass
     mutationFn: async ({ studentId, targetClassId }: { studentId: string, targetClassId: string }) => {
       const { data, error } = await supabase
         .from('students')
-        .update({ class_id: targetClassId })
+        .update({ class_id: targetClassId, removed_from_class_id: null })
         .eq('id', studentId)
         .select()
         .single();
