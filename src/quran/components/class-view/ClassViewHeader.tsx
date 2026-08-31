@@ -1,7 +1,6 @@
 import { Button } from "@/quran/components/ui/button";
 import { WeekdayAttendance } from "./WeekdayAttendance";
-import { MoreVertical, Pencil, Home, Trash2, MoveRight, UserPlus, MessageCircle } from "lucide-react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/quran/components/ui/dropdown-menu";
+import { Home, Trash2, MoveRight, UserPlus, MessageCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { ClassWithStudents } from "@/quran/types/dashboard";
 import { useState } from "react";
@@ -125,146 +124,6 @@ export const ClassViewHeader = ({
     }
   });
 
-  // Helper function to get linked class ID from class_links table
-  const fetchLinkedClassId = async (currentClassId: string): Promise<string | null> => {
-    try {
-      const { data, error } = await supabase
-        .from('class_links')
-        .select('weekday_class_id, weekend_class_id')
-        .or(`weekday_class_id.eq.${currentClassId},weekend_class_id.eq.${currentClassId}`)
-        .maybeSingle();
-
-      if (error || !data) return null;
-
-      // Return the counterpart class ID
-      return data.weekday_class_id === currentClassId
-        ? data.weekend_class_id
-        : data.weekday_class_id;
-    } catch (error) {
-      console.error('Error fetching linked class:', error);
-      return null;
-    }
-  };
-
-  // Helper to check if student exists in linked class
-  const checkStudentExistsInClass = async (
-    student: { name: string; first_name?: string; last_name?: string; email?: string },
-    classId: string
-  ): Promise<boolean> => {
-    try {
-      console.log(`Checking if student exists in class ${classId}:`, student);
-
-      // First try email matching if available
-      if (student.email && student.email.trim()) {
-        const { data, error } = await supabase
-          .from('students')
-          .select('id')
-          .eq('class_id', classId)
-          .eq('email', student.email)
-          .limit(1);
-
-        if (error) {
-          console.error('Error in email check:', error);
-        } else if (data && data.length > 0) {
-          console.log('Found existing student by email');
-          return true;
-        }
-      }
-
-      // Fallback to name matching
-      const { data, error } = await supabase
-        .from('students')
-        .select('id')
-        .eq('class_id', classId)
-        .eq('name', student.name)
-        .limit(1);
-
-      if (error) {
-        console.error('Error in name check:', error);
-        return false;
-      }
-
-      const exists = data && data.length > 0;
-      console.log(`Student ${student.name} exists in class: ${exists}`);
-      return exists;
-    } catch (error) {
-      console.error('Error checking student existence:', error);
-      return false;
-    }
-  };
-
-  // Repair linked students mutation
-  const repairLinkedStudentsMutation = useMutation({
-    mutationFn: async () => {
-      const linkedClassId = await fetchLinkedClassId(classId);
-      if (!linkedClassId) {
-        throw new Error('No linked class found');
-      }
-
-      // Get all students in current class
-      const { data: currentStudents, error } = await supabase
-        .from('students')
-        .select('id, name, first_name, last_name, email, absence_level, failure_level, consecutive_absences, last_lesson_status')
-        .eq('class_id', classId);
-
-      if (error || !currentStudents) throw error;
-
-      let createdCount = 0;
-      let skippedCount = 0;
-      let failedCount = 0;
-
-      for (const student of currentStudents) {
-        try {
-          const exists = await checkStudentExistsInClass(student, linkedClassId);
-
-          if (exists) {
-            skippedCount++;
-            continue;
-          }
-
-          const { error: insertError } = await supabase
-            .from('students')
-            .insert({
-              name: student.name,
-              first_name: student.first_name,
-              last_name: student.last_name,
-              email: student.email,
-              class_id: linkedClassId,
-              absence_level: student.absence_level,
-              failure_level: student.failure_level,
-              consecutive_absences: student.consecutive_absences,
-              last_lesson_status: student.last_lesson_status
-            });
-
-          if (insertError) {
-            console.error(`Failed to create linked record for ${student.name}:`, insertError);
-            failedCount++;
-          } else {
-            createdCount++;
-          }
-        } catch (error) {
-          console.error(`Error processing student ${student.name}:`, error);
-          failedCount++;
-        }
-      }
-
-      return { createdCount, skippedCount, failedCount, linkedClassId };
-    },
-    onSuccess: ({ createdCount, skippedCount, failedCount, linkedClassId }) => {
-      // Invalidate queries for both classes
-      queryClient.invalidateQueries({ queryKey: ['class', classId] });
-      queryClient.invalidateQueries({ queryKey: ['class-students', classId] });
-      queryClient.invalidateQueries({ queryKey: ['class', linkedClassId] });
-      queryClient.invalidateQueries({ queryKey: ['class-students', linkedClassId] });
-
-      toast.success(`Repair completed: ${createdCount} created, ${skippedCount} skipped, ${failedCount} failed`);
-    },
-    onError: (error) => {
-      console.error('Error repairing linked students:', error);
-      toast.error('Failed to repair linked students');
-    }
-  });
-
   // Enhanced add student mutation with robust linked class enrollment
   const addStudentMutation = useMutation({
     mutationFn: async (studentIds: string[]) => {
@@ -288,107 +147,14 @@ export const ClassViewHeader = ({
 
       console.log('Successfully updated students:', updatedStudents);
       const updatedCount = updatedStudents.length;
-      let createdCount = 0;
-      let skippedCount = 0;
-      let failedCount = 0;
-      let linkedClassId: string | null = null;
 
-      // Step B: Check for linked class and handle counterparts
-      try {
-        console.log('Fetching linked class ID for:', classId);
-        linkedClassId = await fetchLinkedClassId(classId);
-        console.log('Linked class ID:', linkedClassId);
-
-        if (linkedClassId) {
-          console.log(`Processing ${updatedStudents.length} students for linked class enrollment`);
-
-          for (const student of updatedStudents) {
-            try {
-              console.log(`Processing student for linked enrollment:`, student);
-
-              // Check if counterpart already exists
-              const exists = await checkStudentExistsInClass(student, linkedClassId);
-              console.log(`Student ${student.name} exists in linked class: ${exists}`);
-
-              if (exists) {
-                console.log(`Skipping ${student.name} - already exists in linked class`);
-                skippedCount++;
-                continue;
-              }
-
-              // Look for an unassigned record that was removed from THIS linked
-              // class specifically. Matching on name alone picked an arbitrary
-              // orphan (no ORDER BY on a LIMIT 1), which swapped weekday and
-              // weekend history between rows when a student had several.
-              const { data: unassignedMatches } = await supabase
-                .from('students')
-                .select('id')
-                .is('class_id', null)
-                .eq('removed_from_class_id', linkedClassId)
-                .eq('name', student.name)
-                .neq('id', student.id)
-                .order('updated_at', { ascending: false })
-                .limit(1);
-
-              const unassignedMatch = unassignedMatches && unassignedMatches.length > 0 ? unassignedMatches[0] : null;
-
-              if (unassignedMatch) {
-                // Reconnect the existing record instead of creating a duplicate
-                console.log(`Reconnecting existing record for ${student.name} to linked class ${linkedClassId}`);
-                const { error: reconnectError } = await supabase
-                  .from('students')
-                  .update({ class_id: linkedClassId, consecutive_absences: 0, removed_from_class_id: null })
-                  .eq('id', unassignedMatch.id);
-
-                if (reconnectError) {
-                  console.error(`Failed to reconnect ${student.name}:`, reconnectError);
-                  failedCount++;
-                } else {
-                  createdCount++;
-                }
-                continue;
-              }
-
-              // Create counterpart in linked class
-              console.log(`Creating linked record for ${student.name} in class ${linkedClassId}`);
-
-              const insertData = {
-                name: student.name,
-                first_name: student.first_name,
-                last_name: student.last_name,
-                email: student.email,
-                class_id: linkedClassId,
-                absence_level: student.absence_level || 1,
-                failure_level: student.failure_level || 1,
-                consecutive_absences: student.consecutive_absences || 0,
-                last_lesson_status: student.last_lesson_status
-              };
-
-              console.log('Insert data:', insertData);
-
-              const { data: insertedData, error: linkedError } = await supabase
-                .from('students')
-                .insert(insertData)
-                .select();
-
-              if (linkedError) {
-                console.error(`Failed to create linked record for ${student.name}:`, linkedError);
-                failedCount++;
-              } else {
-                console.log(`Successfully created linked record for ${student.name}:`, insertedData);
-                createdCount++;
-              }
-            } catch (error) {
-              console.error(`Error processing linked enrollment for ${student.name}:`, error);
-              failedCount++;
-            }
-          }
-        } else {
-          console.log('No linked class found - skipping linked enrollment');
-        }
-      } catch (error) {
-        console.error('Error handling linked class enrollment:', error);
-      }
+      // Each child is a single row, parked on the weekend side of a linked pair
+      // and resolved into both classes at read time. There is no counterpart row
+      // to create, reconnect or keep in sync.
+      const createdCount = 0;
+      const skippedCount = 0;
+      const failedCount = 0;
+      const linkedClassId: string | null = null;
 
       console.log('Final counts:', { updatedCount, createdCount, skippedCount, failedCount });
       return { updatedStudents, updatedCount, createdCount, skippedCount, failedCount, linkedClassId };
@@ -510,19 +276,6 @@ export const ClassViewHeader = ({
 
       <WeekdayAttendance classId={classId} />
 
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-8 w-8">
-            <MoreVertical className="h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={() => repairLinkedStudentsMutation.mutate()}>
-            <Pencil className="mr-2 h-4 w-4" />
-            Repair Linked Students
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
     </div>
 
     {/* Student Removal Dialog */}
