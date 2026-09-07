@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { CurrentLessonDisplay } from "./quran/CurrentLessonDisplay";
 import { LessonDialog } from "./quran/LessonDialog";
 import { debounce } from "lodash";
-import { TanzilViewer } from "./quran/TanzilViewer";
+import { MushafViewer } from "./quran/MushafViewer";
 import { AhsanulQawaidViewer } from "./quran/AhsanulQawaidViewer";
 import { NoorAlBayanViewer } from "./quran/NoorAlBayanViewer";
 import { DigitalKhattProvider } from './quran/DigitalKhattProvider';
@@ -49,10 +49,14 @@ export const QuranDisplay = ({
     if (!studentId) return;
 
     try {
-      const { data: lessons, error } = await supabase
+      const base: any = supabase
         .from("lessons")
         .select("surah, verses, lesson_type")
-        .eq("student_id", studentId)
+        .eq("student_id", studentId);
+
+      const { data: lessons, error } = await (
+        classId ? base.eq("class_id", classId) : base
+      )
         .order("created_at", { ascending: false })
         .limit(1);
 
@@ -180,7 +184,7 @@ export const QuranDisplay = ({
             previewPage={formPreviewValue}
           />
         ) : !isRestrictedClass && (
-          <TanzilViewer 
+          <MushafViewer 
             currentPage={currentPage}
             currentLesson={currentLesson}
             onVerseSelect={handleVerseSelect}
@@ -194,6 +198,7 @@ export const QuranDisplay = ({
           showDialog={showLessonDialog}
           onOpenChange={setShowLessonDialog}
           studentId={studentId}
+          classId={classId}
           onLessonUpdate={handleLessonUpdate}
         />
       </div>

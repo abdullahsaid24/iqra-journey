@@ -20,6 +20,9 @@ import { JUZ_DATA } from "@/quran/types/juz";
 import { AVAILABLE_SURAHS } from "@/quran/types/quran";
 
 interface LessonDialogProps {
+  /** Lessons are per class - a student in a linked weekday/weekend pair has
+   *  separate work in each. */
+  classId?: string;
   showDialog: boolean;
   onOpenChange: (open: boolean) => void;
   studentId: string;
@@ -30,6 +33,7 @@ export const LessonDialog = ({
   showDialog,
   onOpenChange,
   studentId,
+  classId,
   onLessonUpdate,
 }: LessonDialogProps) => {
   const [selectedJuz, setSelectedJuz] = useState<string>("");
@@ -72,6 +76,7 @@ export const LessonDialog = ({
 
       const { error } = await supabase.from("lessons").insert({
         student_id: studentId,
+        class_id: classId,
         surah: selectedSurah,
         verses: selectedVerses,
       });

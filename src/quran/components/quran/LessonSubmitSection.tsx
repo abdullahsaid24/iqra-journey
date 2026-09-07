@@ -14,6 +14,7 @@ interface LessonSubmitSectionProps {
   startVerses: string;
   endVerses: string;
   updateLesson: boolean;
+  requiredRepetitions?: number;
   nextWeekStartSurah: string;
   nextWeekEndSurah: string;
   nextWeekStartVerses: string;
@@ -32,6 +33,7 @@ export const LessonSubmitSection = ({
   startVerses,
   endVerses,
   updateLesson,
+  requiredRepetitions = 1,
   nextWeekStartSurah,
   nextWeekEndSurah,
   nextWeekStartVerses,
@@ -131,32 +133,25 @@ export const LessonSubmitSection = ({
     const toastId = toast.loading("Updating lesson and sending notification...");
 
     try {
-      const { data: homework, error: homeworkError } = await supabase.from("homework_assignments").insert({
-        student_id: studentId,
-        surah: surahRange,
-        verses: verses,
-        status: 'passed',
-        assigned_by: session.user.id,
-        type: 'lesson'
-      }).select().single();
-
-      if (homeworkError) throw homeworkError;
-
       const { error: lessonError } = await supabase.from("lessons").insert({
         student_id: studentId,
+        class_id: classId,
         surah: surahRange,
         verses: verses,
-        lesson_type: lessonType
-      });
+        lesson_type: lessonType,
+        required_repetitions: requiredRepetitions
+      }).select().single();
 
       if (lessonError) throw lessonError;
 
       if (updateLesson) {
         const { error: nextLessonError } = await supabase.from("lessons").insert({
           student_id: studentId,
+          class_id: classId,
           surah: nextWeekSurahRange,
           verses: nextWeekVersesRange,
-          lesson_type: lessonType
+          lesson_type: lessonType,
+          required_repetitions: 1
         });
 
         if (nextLessonError) throw nextLessonError;
@@ -166,7 +161,7 @@ export const LessonSubmitSection = ({
         const response = await supabase.functions.invoke('send-sms', {
           body: {
             student_id: studentId,
-            lesson_id: homework?.id,
+            lesson_id: null,
             is_passing: true,
             is_homework: false,
           }
