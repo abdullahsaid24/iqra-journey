@@ -142,15 +142,17 @@ serve(async (req) => {
 
       try {
         // Reuse an existing row rather than minting another duplicate.
-        const { data: existing } = await supabase
+        // Compared on a normalised name: stored names carry stray whitespace and
+        // inconsistent capitalisation ("Semira ahmed " vs "Semira Ahmed"), and an
+        // exact match would miss them and create a second row for the same child.
+        const norm = (v: string) => v.trim().toLowerCase().replace(/\s+/g, ' ');
+        const { data: classmates } = await supabase
           .from('students')
-          .select('id')
-          .ilike('name', name)
-          .eq('class_id', classId)
-          .limit(1);
+          .select('id, name')
+          .eq('class_id', classId);
 
-        let studentId: string | null =
-          existing && existing.length > 0 ? existing[0].id : null;
+        const match = (classmates ?? []).find((c: any) => norm(c.name ?? '') === norm(name));
+        let studentId: string | null = match ? match.id : null;
         let studentEmail = name.toLowerCase().replace(/\s+/g, '.') + '@iqra.com';
 
         if (!studentId) {
