@@ -10,6 +10,11 @@ import { toast } from "sonner";
 import { useIsMobile } from "@/quran/hooks/use-mobile";
 import { useState } from "react";
 import { Input } from "@/quran/components/ui/input";
+import { Textarea } from "@/quran/components/ui/textarea";
+import {
+  AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogDescription, AlertDialogFooter,
+} from "@/quran/components/ui/alert-dialog";
 import { formatLessonDisplay } from "@/quran/lib/utils";
 import { useNavigate } from "react-router-dom";
 import type { StudentWithProgress, HomeworkAssignment } from "@/quran/types/student";
@@ -39,6 +44,9 @@ export const CurrentStatusTab = ({ classId, onStudentSelect }: CurrentStatusTabP
   const [searchQuery, setSearchQuery] = useState("");
   const [isPresetOpen, setIsPresetOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<{ id: string, name: string } | null>(null);
+  const [isBulkAbsentOpen, setIsBulkAbsentOpen] = useState(false);
+  const [bulkMessage, setBulkMessage] = useState("");
+  const [isBulkProcessing, setIsBulkProcessing] = useState(false);
 
   const { data: students, isLoading, refetch } = useQuery<StudentWithProgress[]>({
     queryKey: ['current-status', classId],
@@ -240,15 +248,23 @@ export const CurrentStatusTab = ({ classId, onStudentSelect }: CurrentStatusTabP
     setIsPresetOpen(true);
   };
 
-  const handleMarkAllAbsent = async () => {
+  const handleMarkAllAbsent = () => {
     if (!studentsNeedingAttention || studentsNeedingAttention.length === 0) {
       toast.error('No students to mark absent');
       return;
     }
+    setBulkMessage("");
+    setIsBulkAbsentOpen(true);
+  };
 
-    if (!confirm(`Mark ${studentsNeedingAttention.length} student${studentsNeedingAttention.length !== 1 ? 's' : ''} as absent and send level-appropriate notifications?`)) {
-      return;
-    }
+  const confirmMarkAllAbsent = async () => {
+    setIsBulkProcessing(true);
+    setIsBulkAbsentOpen(false);
+
+    // Blank means keep the existing behaviour: each student gets the preset for
+    // their own absence level. A custom message replaces that for everyone, with
+    // the same placeholders substituted.
+    const customMessage = bulkMessage.trim();
 
     const results = {
       marked: 0,
@@ -262,21 +278,26 @@ export const CurrentStatusTab = ({ classId, onStudentSelect }: CurrentStatusTabP
       try {
         const absenceLevel = student.absence_level || 1;
 
-        const { data: presets } = await supabase
-          .from('notification_presets')
-          .select('*')
-          .eq('type', 'lesson_absent')
-          .eq('level', absenceLevel)
-          .eq('is_adult', false)
-          .limit(1);
+        const { data: presets } = customMessage
+          ? { data: null }
+          : await supabase
+              .from('notification_presets')
+              .select('*')
+              .eq('type', 'lesson_absent')
+              .eq('level', absenceLevel)
+              .eq('is_adult', false)
+              .limit(1);
 
+        const className = getClassNameFromId(classId);
         let message = '';
-        if (presets && presets.length > 0) {
-          const className = getClassNameFromId(classId);
-          message = presets[0].content
-            .replace(/\{\{?student_?name\}\}?/gi, student.name)
-            .replace(/\{\{?class_?name\}\}?/gi, className);
+        if (customMessage) {
+          message = customMessage;
+        } else if (presets && presets.length > 0) {
+          message = presets[0].content;
         }
+        message = message
+          .replace(/\{\{?student_?name\}\}?/gi, student.name)
+          .replace(/\{\{?class_?name\}\}?/gi, className);
 
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) continue;
@@ -337,6 +358,7 @@ export const CurrentStatusTab = ({ classId, onStudentSelect }: CurrentStatusTabP
 
     queryClient.invalidateQueries({ queryKey: ['today-attendance', classId] });
     queryClient.invalidateQueries({ queryKey: ['current-status', classId] });
+    setIsBulkProcessing(false);
   };
 
   if (isLoading) {
@@ -539,6 +561,54 @@ export const CurrentStatusTab = ({ classId, onStudentSelect }: CurrentStatusTabP
         studentId={selectedStudent?.id}
         onExcusedAbsent={selectedStudent ? () => handleExcusedAbsent(selectedStudent.id, selectedStudent.name) : undefined}
       />
+
+      <AlertDialog open={isBulkAbsentOpen} onOpenChange={setIsBulkAbsentOpen}>
+        <AlertDialogContent className="max-w-lg">
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Mark {studentsNeedingAttention.length} student{studentsNeedingAttention.length !== 1 ? 's' : ''} absent
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {getClassNameFromId(classId)} - each student will be marked absent for today and their
+              parent notified.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <div className="max-h-32 overflow-y-auto rounded-md border bg-slate-50 p-2 text-sm text-slate-700">
+            {studentsNeedingAttention.map(s => s.name).join(', ')}
+          </div>
+
+          <div className="space-y-2">
+            <label htmlFor="bulk-absent-message" className="text-sm font-medium">
+              Custom message <span className="font-normal text-slate-500">(optional)</span>
+            </label>
+            <Textarea
+              id="bulk-absent-message"
+              value={bulkMessage}
+              onChange={e => setBulkMessage(e.target.value)}
+              placeholder="Leave blank to send each student's usual absence message."
+              rows={4}
+              className="resize-none"
+            />
+            <p className="text-xs text-slate-500">
+              {bulkMessage.trim()
+                ? `This message goes to all ${studentsNeedingAttention.length}. You can use {{student_name}} and {{class_name}}. ${bulkMessage.length} characters, ${bulkMessage.length === 0 ? 0 : Math.ceil(bulkMessage.length / 153)} SMS segment${Math.ceil(bulkMessage.length / 153) !== 1 ? 's' : ''} each.`
+                : "Blank uses each student's own absence-level message, as now."}
+            </p>
+          </div>
+
+          <AlertDialogFooter>
+            <Button variant="outline" onClick={() => setIsBulkAbsentOpen(false)} disabled={isBulkProcessing}>
+              Cancel
+            </Button>
+            <Button onClick={confirmMarkAllAbsent} disabled={isBulkProcessing} className="bg-amber-600 hover:bg-amber-700 text-white">
+              {isBulkProcessing
+                ? 'Processing...'
+                : `Mark absent & notify (${studentsNeedingAttention.length})`}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
