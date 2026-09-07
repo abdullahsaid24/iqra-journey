@@ -2,17 +2,25 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/quran/lib/supabase";
 
-export function useCurrentLesson(studentId: string | undefined) {
+// A student attending both a weekday and weekend class has a separate current
+// lesson in each, so the class has to be part of the lookup and the cache key.
+export function useCurrentLesson(studentId: string | undefined, classId?: string) {
   return useQuery({
-    queryKey: ['current-lesson', studentId],
+    queryKey: ['current-lesson', studentId, classId],
     queryFn: async () => {
       if (!studentId) return null;
-      
-      const { data, error } = await supabase
+
+      // Annotated any: chaining a conditional filter onto Supabase's typed
+      // builder exceeds TypeScript's instantiation depth here (TS2589).
+      const base: any = supabase
         .from("lessons")
         .select("*")
         .eq("student_id", studentId)
-        .eq("is_active", true)
+        .eq("is_active", true);
+
+      const { data, error } = await (
+        classId ? base.eq("class_id", classId) : base
+      )
         .order("created_at", { ascending: false })
         .limit(1);
         

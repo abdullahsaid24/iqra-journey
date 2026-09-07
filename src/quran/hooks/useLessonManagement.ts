@@ -7,6 +7,9 @@ import { formatLessonDisplay, cleanVerseReferences } from "@/quran/lib/utils";
 
 interface UseLessonManagementProps {
   studentId: string;
+  /** Lessons and homework are per class - a student attending both a weekday
+   *  and weekend class has separate work in each. */
+  classId?: string;
   currentLesson?: { surah: string; verses: string } | null;
   selectedStartVerse?: string | null;
   selectedEndVerse?: string | null;
@@ -16,6 +19,7 @@ interface UseLessonManagementProps {
 
 export const useLessonManagement = ({
   studentId,
+  classId,
   currentLesson,
   selectedStartVerse,
   selectedEndVerse,
@@ -39,7 +43,7 @@ export const useLessonManagement = ({
       }
       checkIfPassedLesson();
     }
-  }, [studentId, currentLesson]);
+  }, [studentId, classId, currentLesson]);
 
   useEffect(() => {
     if (selectedStartVerse && selectedStartVerse.includes(':')) {
@@ -99,10 +103,16 @@ export const useLessonManagement = ({
   const fetchCurrentLesson = async () => {
     setIsLoading(true);
     try {
-      const { data: lessons, error } = await supabase
+      // Annotated any: chaining a conditional filter onto Supabase's typed
+      // builder exceeds TypeScript's instantiation depth here (TS2589).
+      const lessonBase: any = supabase
         .from("lessons")
         .select("*")
-        .eq("student_id", studentId)
+        .eq("student_id", studentId);
+
+      const { data: lessons, error } = await (
+        classId ? lessonBase.eq("class_id", classId) : lessonBase
+      )
         .order("created_at", { ascending: false })
         .limit(1);
 
@@ -134,12 +144,17 @@ export const useLessonManagement = ({
 
   const checkIfPassedLesson = async () => {
     try {
-      const { data: assignments, error } = await supabase
+      // See note above - same TS2589 depth limit.
+      const passedBase: any = supabase
         .from("homework_assignments")
         .select("*")
         .eq("student_id", studentId)
         .eq("status", "passed")
-        .eq("type", "lesson")
+        .eq("type", "lesson");
+
+      const { data: assignments, error } = await (
+        classId ? passedBase.eq("class_id", classId) : passedBase
+      )
         .order("created_at", { ascending: false })
         .limit(1);
 

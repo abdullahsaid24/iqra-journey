@@ -3,6 +3,7 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/quran/components/ui/button";
 import { useStudentStats } from "@/quran/hooks/useStudentStats";
+import { useActiveClassId } from "@/quran/hooks/useActiveClassId";
 import { LessonPassFailChart } from "@/quran/components/stats/LessonPassFailChart";
 import { CurrentLessonsTable } from "@/quran/components/stats/CurrentLessonsTable";
 import CountdownTimer from "@/quran/components/stats/CountdownTimer";
@@ -20,7 +21,11 @@ const StudentStats = () => {
   const [selectedMonth, setSelectedMonth] = useState<Date>(new Date());
   const { userRole } = useUserRole();
 
-  const { data: studentData, isLoading: isLoadingStudent } = useStudentStats(studentId, selectedMonth);
+  // Which class this view is for: ?class= when arriving from a class roster,
+  // otherwise the student's own class.
+  const { classId } = useActiveClassId(studentId);
+
+  const { data: studentData, isLoading: isLoadingStudent } = useStudentStats(studentId, selectedMonth, classId);
 
   const handleBack = () => {
     // Check if we're coming from parent dashboard
@@ -78,16 +83,26 @@ const StudentStats = () => {
       <div className="container mx-auto space-y-6 sm:space-y-8">
         <div className="flex flex-col sm:flex-row items-start justify-between gap-4 sm:gap-6 mb-6 sm:mb-8">
           <div className="flex flex-col gap-4 w-full sm:w-auto">
-            {!isStudent && (
-              <Button
-                variant="outline"
-                onClick={handleBack}
-                className="bg-white text-gray-900 hover:bg-gray-100 w-fit"
-              >
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                {isParentView ? 'Back to Dashboard' : 'Back to Class'}
-              </Button>
-            )}
+            <div className="flex flex-wrap gap-3">
+              {!isStudent && (
+                <Button
+                  variant="outline"
+                  onClick={handleBack}
+                  className="bg-white text-gray-900 hover:bg-gray-100 w-fit"
+                >
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  {isParentView ? 'Back to Dashboard' : 'Back to Class'}
+                </Button>
+              )}
+              {(isStudent || isParentView) && (
+                <Button
+                  onClick={() => navigate(`/quran/student/${studentId}/practice`)}
+                  className="bg-quran-primary text-white hover:bg-quran-primary/90 w-fit"
+                >
+                  Practice Lesson
+                </Button>
+              )}
+            </div>
             <div className="space-y-4">
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
                 {studentData?.name}'s Progress Report

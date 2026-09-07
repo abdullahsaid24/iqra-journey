@@ -51,6 +51,7 @@ export const LessonStatus = ({ studentId, currentLesson, onStatusUpdate, student
 
       const { data: homework, error } = await supabase.from("homework_assignments").insert({
         student_id: studentId,
+        class_id: classId,
         surah: currentLesson.surah,
         verses: currentLesson.verses,
         status: status === 'repeat' ? 'pending' : status,
@@ -63,6 +64,7 @@ export const LessonStatus = ({ studentId, currentLesson, onStatusUpdate, student
       if (newLesson) {
         const { error: lessonError } = await supabase.from("lessons").insert({
           student_id: studentId,
+          class_id: classId,
           surah: newLesson.surah,
           verses: newLesson.verses,
         });

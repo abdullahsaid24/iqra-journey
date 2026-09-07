@@ -192,6 +192,48 @@ END;
 $function$;
 
 -- ---------------------------------------------------------------------
+-- 8b. Scope the "one active lesson" rule to the class.
+--
+-- handle_active_lesson deactivated every other lesson for the student, which
+-- was correct while a child had one row per class. With a single row, marking
+-- the Monday lesson active would deactivate the Saturday one - a child could
+-- never have a current lesson in both classes. Same for lesson ordering, which
+-- must number within a class rather than across the student.
+-- ---------------------------------------------------------------------
+create or replace function public.handle_active_lesson()
+returns trigger
+language plpgsql
+as $function$
+BEGIN
+  IF NEW.is_active = true THEN
+    UPDATE lessons
+    SET is_active = false
+    WHERE student_id = NEW.student_id
+      AND class_id IS NOT DISTINCT FROM NEW.class_id
+      AND id <> NEW.id;
+  END IF;
+  RETURN NEW;
+END;
+$function$;
+
+create or replace function public.maintain_lesson_order()
+returns trigger
+language plpgsql
+as $function$
+BEGIN
+  IF NEW."order" IS NULL OR NEW."order" = 0 THEN
+    SELECT COALESCE(MAX("order") + 1, 1)
+      INTO NEW."order"
+    FROM lessons
+    WHERE student_id = NEW.student_id
+      AND class_id IS NOT DISTINCT FROM NEW.class_id
+      AND is_active = true;
+  END IF;
+  RETURN NEW;
+END;
+$function$;
+
+-- ---------------------------------------------------------------------
 -- 9. Restore the triggers we kept.
 -- ---------------------------------------------------------------------
 alter table public.students              enable trigger trigger_auto_link_parent;

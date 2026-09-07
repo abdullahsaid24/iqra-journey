@@ -6,6 +6,7 @@ import { AhsanulQawaidFormGrid } from "./AhsanulQawaidFormGrid";
 import { NoorAlBayanFormGrid } from "./NoorAlBayanFormGrid";
 import { FullQuranFormGrid } from "./FullQuranFormGrid";
 import { LessonSubmitSection } from "./LessonSubmitSection";
+import { Input } from "@/quran/components/ui/input";
 
 type LessonType = 'current_lesson' | 'goal_setting' | 'ahsanul_qawaid_book_1' | 'noor_al_bayan' | 'full_quran';
 
@@ -42,9 +43,11 @@ export const LessonForm = ({
   const [startPage, setStartPage] = useState<string>("");
   const [endPage, setEndPage] = useState<string>("");
 
-  // For Full Quran surahs  
   const [fullQuranStartSurah, setFullQuranStartSurah] = useState<string>("");
   const [fullQuranEndSurah, setFullQuranEndSurah] = useState<string>("");
+
+  // Required repetitions for practice
+  const [requiredRepetitions, setRequiredRepetitions] = useState<number>(1);
 
   // Prefill form fields based on lesson type and current lesson
   useEffect(() => {
@@ -83,6 +86,7 @@ export const LessonForm = ({
     handleVerseSelectionChange
   } = useLessonManagement({
     studentId,
+    classId,
     currentLesson,
     selectedStartVerse,
     selectedEndVerse,
@@ -172,6 +176,20 @@ export const LessonForm = ({
         {renderLessonForm()}
       </div>
 
+      <div className="mt-4 border-t pt-4">
+        <h3 className="text-sm font-medium mb-2">Practice Requirements</h3>
+        <div className="flex items-center gap-4">
+          <label className="text-sm text-slate-600">Required Repetitions:</label>
+          <Input 
+            type="number" 
+            min={1}
+            value={requiredRepetitions} 
+            onChange={(e) => setRequiredRepetitions(parseInt(e.target.value) || 1)} 
+            className="w-24"
+          />
+        </div>
+      </div>
+
       <LessonSubmitSection 
         studentId={studentId}
         isLoading={isLoading}
@@ -180,6 +198,7 @@ export const LessonForm = ({
         startVerses={lessonType === 'ahsanul_qawaid_book_1' ? startLesson : lessonType === 'noor_al_bayan' ? startPage : lessonType === 'full_quran' ? fullQuranStartSurah : startVerses}
         endVerses={lessonType === 'ahsanul_qawaid_book_1' ? endLesson : lessonType === 'noor_al_bayan' ? endPage : lessonType === 'full_quran' ? fullQuranEndSurah : endVerses}
         updateLesson={false}
+        requiredRepetitions={requiredRepetitions}
         nextWeekStartSurah=""
         nextWeekEndSurah=""
         nextWeekStartVerses=""

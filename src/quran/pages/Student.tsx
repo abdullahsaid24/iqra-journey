@@ -4,9 +4,13 @@ import { supabase } from "@/quran/lib/supabase";
 import { StudentHeader } from "@/quran/components/student/StudentHeader";
 import { StudentDetails } from "@/quran/components/student/StudentDetails";
 import { toast } from "sonner";
+import { useActiveClassId } from "@/quran/hooks/useActiveClassId";
 
 const Student = () => {
   const { id } = useParams();
+  // Lessons are per class; ?class= carries it from a class roster, otherwise
+  // fall back to the student's own class.
+  const { classId: activeClassId } = useActiveClassId(id);
   const [studentData, setStudentData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -27,10 +31,14 @@ const Student = () => {
         }
 
         // Fetch the latest lesson
-        const { data: lessons, error: lessonError } = await supabase
+        const lessonBase: any = supabase
           .from('lessons')
           .select('*')
-          .eq('student_id', id)
+          .eq('student_id', id);
+
+        const { data: lessons, error: lessonError } = await (
+          activeClassId ? lessonBase.eq('class_id', activeClassId) : lessonBase
+        )
           .order('created_at', { ascending: false })
           .limit(1);
 
@@ -57,7 +65,7 @@ const Student = () => {
     if (id) {
       fetchStudentData();
     }
-  }, [id]);
+  }, [id, activeClassId]);
 
   const handleLessonComplete = async (surah: string, startVerse: string, endVerse: string) => {
     try {
@@ -65,6 +73,7 @@ const Student = () => {
         .from('lessons')
         .insert({
           student_id: id,
+          class_id: activeClassId,
           surah,
           verses: `${startVerse}-${endVerse}`,
         });

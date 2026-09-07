@@ -4,9 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { startOfMonth, endOfMonth } from "date-fns";
 
-export const useStudentStats = (studentId: string | undefined, selectedMonth: Date = new Date()) => {
+// classId scopes the current lesson and homework: a student in a linked
+// weekday/weekend pair has separate work in each class.
+export const useStudentStats = (studentId: string | undefined, selectedMonth: Date = new Date(), classId?: string) => {
   return useQuery({
-    queryKey: ['student', studentId, selectedMonth.toISOString()],
+    queryKey: ['student', studentId, selectedMonth.toISOString(), classId],
     queryFn: async () => {
       if (!studentId) return null;
 
@@ -92,12 +94,15 @@ export const useStudentStats = (studentId: string | undefined, selectedMonth: Da
       }
 
       // Get current lesson
-      const { data: currentLesson, error: lessonError } = await supabase
+      const lessonBase: any = supabase
         .from('lessons')
         .select('*')
         .eq('student_id', studentId)
-        .eq('is_active', true)
-        .maybeSingle();
+        .eq('is_active', true);
+
+      const { data: currentLesson, error: lessonError } = await (
+        classId ? lessonBase.eq('class_id', classId) : lessonBase
+      ).maybeSingle();
 
       if (lessonError) {
         console.error('Error fetching current lesson:', lessonError);
@@ -106,11 +111,14 @@ export const useStudentStats = (studentId: string | undefined, selectedMonth: Da
       }
 
       // Get ALL homework assignments without filtering by status
-      const { data: homeworkAssignments, error: homeworkError } = await supabase
+      const homeworkBase: any = supabase
         .from('homework_assignments')
         .select('*')
-        .eq('student_id', studentId)
-        .order('created_at', { ascending: false });
+        .eq('student_id', studentId);
+
+      const { data: homeworkAssignments, error: homeworkError } = await (
+        classId ? homeworkBase.eq('class_id', classId) : homeworkBase
+      ).order('created_at', { ascending: false });
 
       if (homeworkError) {
         console.error('Error fetching homework assignments:', homeworkError);
