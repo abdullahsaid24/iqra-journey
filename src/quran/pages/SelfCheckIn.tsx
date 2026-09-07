@@ -2,6 +2,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/quran/lib/supabase";
+import { getClassScope } from "@/quran/lib/classLinks";
 import { Button } from "@/quran/components/ui/button";
 import {
   AlertDialog,
@@ -49,10 +50,11 @@ const SelfCheckIn = () => {
     queryKey: ["checkin-students", activeFetchClassId],
     queryFn: async () => {
       if (!activeFetchClassId) return [];
+      const scope = await getClassScope(activeFetchClassId);
       const { data, error } = await supabase
         .from("students")
         .select("id, name")
-        .eq("class_id", activeFetchClassId)
+        .in("class_id", scope)
         .order("name");
       if (error) throw error;
       return data || [];

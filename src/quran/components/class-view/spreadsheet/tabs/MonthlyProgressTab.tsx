@@ -1,6 +1,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/quran/lib/supabase";
+import { getClassScope } from "@/quran/lib/classLinks";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/quran/components/ui/table";
 import { useIsMobile } from "@/quran/hooks/use-mobile"; 
 import type { StudentWithProgress, MonthlyProgress } from "@/quran/types/student";
@@ -45,7 +46,8 @@ export const MonthlyProgressTab = ({ classId, onStudentSelect }: MonthlyProgress
         .order('name');
 
       if (classId) {
-        query.eq('class_id', classId);
+        const scope = await getClassScope(classId);
+        query.in('class_id', scope);
       }
 
       const { data, error } = await query;

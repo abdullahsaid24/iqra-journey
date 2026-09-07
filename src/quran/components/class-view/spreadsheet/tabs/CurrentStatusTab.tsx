@@ -1,6 +1,7 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/quran/lib/supabase";
+import { getClassScope } from "@/quran/lib/classLinks";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/quran/components/ui/table";
 import { Badge } from "@/quran/components/ui/badge";
 import { Button } from "@/quran/components/ui/button";
@@ -71,7 +72,13 @@ export const CurrentStatusTab = ({ classId, onStudentSelect }: CurrentStatusTabP
         .order('name');
 
       if (classId) {
-        query.eq('class_id', classId);
+        // One row per child, parked on the weekend side of a linked pair, so the
+        // roster is this class plus its counterpart.
+        const scope = await getClassScope(classId);
+        query.in('class_id', scope);
+        // ...but lessons and homework are per class, so only show this class's.
+        query.eq('lessons.class_id', classId);
+        query.eq('homework_assignments.class_id', classId);
       }
 
       const { data, error } = await query;

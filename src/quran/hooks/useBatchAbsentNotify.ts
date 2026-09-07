@@ -1,6 +1,7 @@
 
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { supabase } from '@/quran/lib/supabase';
+import { getClassScope } from '@/quran/lib/classLinks';
 
 interface AbsentStudent {
   id: string;
@@ -22,10 +23,14 @@ export const useBatchAbsentNotify = (classId: string | undefined) => {
       if (!classId) return [];
 
       // 1. Get all students in the class
+      // One row per child across a linked pair, so the roster is this class
+      // plus its counterpart. Attendance below stays filtered to this class.
+      const scope = await getClassScope(classId);
+
       const { data: allStudents, error: studentsError } = await supabase
         .from('students')
         .select('id, name, absence_level')
-        .eq('class_id', classId);
+        .in('class_id', scope);
 
       if (studentsError) {
         console.error('Error fetching students:', studentsError);
