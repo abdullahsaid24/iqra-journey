@@ -13,7 +13,7 @@ import { CompactVerseSelect } from "./CompactVerseSelect";
 import { CompactJuzSelect } from "./CompactJuzSelect";
 import { MushafPdfViewer } from "./MushafPdfViewer";
 
-interface TanzilViewerProps {
+interface MushafViewerProps {
   currentPage?: number;
   currentLesson?: { surah: string; verses: string } | null;
   onVerseSelect?: (verseKey: string, position: 'start' | 'end') => void;
@@ -22,14 +22,14 @@ interface TanzilViewerProps {
   onPageChange?: (pageNumber: number) => void;
 }
 
-export const TanzilViewer = ({
+export const MushafViewer = ({
   currentPage: initialPage = 1,
   onVerseSelect,
   selectedStartVerse = null,
   selectedEndVerse = null,
   currentLesson,
   onPageChange
-}: TanzilViewerProps) => {
+}: MushafViewerProps) => {
   const viewerRef = useRef<HTMLDivElement>(null);
   const [pageNumber, setPageNumber] = useState<number>(initialPage);
   const [navigationJuz, setNavigationJuz] = useState<string>("");
