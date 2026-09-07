@@ -2,6 +2,7 @@
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { supabase } from '@/quran/lib/supabase';
 import { getClassScope } from '@/quran/lib/classLinks';
+import { schoolToday } from "@/quran/lib/schoolDate";
 
 interface AbsentStudent {
   id: string;
@@ -40,7 +41,7 @@ export const useBatchAbsentNotify = (classId: string | undefined) => {
       if (!allStudents || allStudents.length === 0) return [];
 
       // 2. Get today's present records
-      const today = new Date().toISOString().split('T')[0];
+      const today = schoolToday();
       const { data: presentRecords, error: attendanceError } = await supabase
         .from('weekday_attendance')
         .select('student_id')
@@ -87,7 +88,7 @@ export const useBatchAbsentNotify = (classId: string | undefined) => {
       let sent = 0;
       let failed = 0;
       const total = absentStudents.length;
-      const today = new Date().toISOString().split('T')[0];
+      const today = schoolToday();
 
       // Get current session for created_by
       const { data: session } = await supabase.auth.getSession();

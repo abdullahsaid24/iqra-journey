@@ -11,6 +11,7 @@ import { NotificationPresetSelect } from "@/quran/components/quran/NotificationP
 import { AttendanceHistory } from "@/quran/components/attendance/AttendanceHistory";
 import { MonthlyAbsenceBadge } from "@/quran/components/attendance/MonthlyAbsenceBadge";
 import { NotifyAbsentButton } from "@/quran/components/attendance/NotifyAbsentButton";
+import { schoolToday } from "@/quran/lib/schoolDate";
 
 const getAttendanceTitle = (classId: string | undefined) => {
   if (!classId) return 'Class Attendance';
@@ -119,7 +120,7 @@ const ClassAttendance = () => {
   const clearTodayAttendance = async () => {
     if (!classId) return;
 
-    const today = new Date().toISOString().split('T')[0];
+    const today = schoolToday();
 
     try {
       const { error } = await supabase

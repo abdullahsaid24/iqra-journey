@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Badge } from "@/quran/components/ui/badge";
 import { supabase } from "@/quran/lib/supabase";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/quran/components/ui/tooltip";
+import { schoolMonthBounds } from "@/quran/lib/schoolDate";
 interface MonthlyAbsenceBadgeProps {
   studentId: string;
   classId: string;
@@ -16,8 +17,8 @@ export const MonthlyAbsenceBadge = ({
       try {
         // Get the first day of the current month
         const now = new Date();
-        const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-        const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+        const firstDayOfMonth = schoolMonthBounds(now).first;
+        const lastDayOfMonth = schoolMonthBounds(now).last;
         const {
           data,
           error

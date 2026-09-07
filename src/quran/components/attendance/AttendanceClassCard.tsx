@@ -7,6 +7,7 @@ import { Button } from "@/quran/components/ui/button";
 import { Badge } from "@/quran/components/ui/badge";
 import { useEffect, useState } from "react";
 import { supabase } from "@/quran/lib/supabase";
+import { schoolToday, schoolMonthBounds } from "@/quran/lib/schoolDate";
 
 interface AttendanceClassCardProps {
   classItem: ClassWithStudents;
@@ -20,7 +21,7 @@ export const AttendanceClassCard = ({ classItem }: AttendanceClassCardProps) => 
   // Check today's attendance status
   useEffect(() => {
     const checkTodayAttendance = async () => {
-      const today = new Date().toISOString().split('T')[0];
+      const today = schoolToday();
 
       try {
         const { data, error } = await supabase
@@ -41,8 +42,8 @@ export const AttendanceClassCard = ({ classItem }: AttendanceClassCardProps) => 
     const getMonthlyAbsences = async () => {
       // Get the first day of the current month
       const now = new Date();
-      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-      const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+      const firstDayOfMonth = schoolMonthBounds(now).first;
+      const lastDayOfMonth = schoolMonthBounds(now).last;
 
       try {
         const { data, error } = await supabase

@@ -14,6 +14,7 @@ import { formatLessonDisplay } from "@/quran/lib/utils";
 import { useNavigate } from "react-router-dom";
 import type { StudentWithProgress, HomeworkAssignment } from "@/quran/types/student";
 import { NotificationPresetSelect } from "@/quran/components/quran/NotificationPresetSelect";
+import { schoolToday, schoolDateOf } from "@/quran/lib/schoolDate";
 
 interface CurrentStatusTabProps {
   classId?: string;
@@ -92,7 +93,7 @@ export const CurrentStatusTab = ({ classId, onStudentSelect }: CurrentStatusTabP
     queryFn: async () => {
       if (!classId) return [];
 
-      const today = new Date().toISOString().split('T')[0];
+      const today = schoolToday();
       const { data, error } = await supabase
         .from('weekday_attendance')
         .select('student_id, status')
@@ -115,7 +116,7 @@ export const CurrentStatusTab = ({ classId, onStudentSelect }: CurrentStatusTabP
         return;
       }
 
-      const today = new Date().toISOString().split('T')[0];
+      const today = schoolToday();
       const toastId = toast.loading("Marking student as absent...");
 
       const { error: attendanceError } = await supabase
@@ -201,7 +202,7 @@ export const CurrentStatusTab = ({ classId, onStudentSelect }: CurrentStatusTabP
         return;
       }
 
-      const today = new Date().toISOString().split('T')[0];
+      const today = schoolToday();
       const toastId = toast.loading("Marking student as excused absent...");
 
       const { error: attendanceError } = await supabase
@@ -280,7 +281,7 @@ export const CurrentStatusTab = ({ classId, onStudentSelect }: CurrentStatusTabP
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) continue;
 
-        const today = new Date().toISOString().split('T')[0];
+        const today = schoolToday();
         const { error: attendanceError } = await supabase
           .from('weekday_attendance')
           .upsert({
@@ -372,14 +373,16 @@ export const CurrentStatusTab = ({ classId, onStudentSelect }: CurrentStatusTabP
   };
 
   const getLessonStatus = (student: StudentWithProgress) => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = schoolToday();
 
     if (!student.homework_assignments || student.homework_assignments.length === 0) {
       return "Not updated";
     }
 
+    // created_at is a UTC timestamp; compare the school-local day it falls on,
+    // not the leading characters of the UTC string.
     const todayAssignments = student.homework_assignments.filter(assignment =>
-      assignment.created_at.startsWith(today)
+      schoolDateOf(assignment.created_at) === today
     );
 
     return todayAssignments.length > 0 ? "Updated today" : "Not updated";

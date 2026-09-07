@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
+import { schoolToday } from "@/quran/lib/schoolDate";
 
 interface Student {
   id: string;
@@ -86,7 +87,7 @@ export const useWeekdayAttendance = (classId: string) => {
         }
 
         // Get attendance records for today to mark which students are already processed
-        const today = new Date().toISOString().split('T')[0];
+        const today = schoolToday();
         const { data: attendanceData } = await supabase
           .from('weekday_attendance')
           .select('student_id, status')
@@ -139,7 +140,7 @@ export const useWeekdayAttendance = (classId: string) => {
         throw new Error('No authenticated user found');
       }
 
-      const today = new Date().toISOString().split('T')[0];
+      const today = schoolToday();
 
       // Use upsert with the onConflict parameter
       const { error } = await supabase

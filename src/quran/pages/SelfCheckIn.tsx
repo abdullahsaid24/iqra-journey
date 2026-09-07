@@ -17,6 +17,7 @@ import { ScrollArea } from "@/quran/components/ui/scroll-area";
 import { toast } from "sonner";
 import { Loader2, CheckCircle2, Clock, BookOpen, Users, Search } from "lucide-react";
 import { useClassSchedule } from "@/quran/hooks/useClassSchedule";
+import { schoolToday } from "@/quran/lib/schoolDate";
 
 const SELF_CHECKIN_USER_ID = "00000000-0000-0000-0000-000000000000";
 
@@ -67,7 +68,7 @@ const SelfCheckIn = () => {
     queryKey: ["checkin-attendance", activeClassId],
     queryFn: async () => {
       if (!activeClassId) return [];
-      const today = new Date().toISOString().split("T")[0];
+      const today = schoolToday();
       const { data, error } = await supabase
         .from("weekday_attendance")
         .select("student_id, status")
@@ -106,7 +107,7 @@ const SelfCheckIn = () => {
   const checkInMutation = useMutation({
     mutationFn: async (studentId: string) => {
       if (!activeClassId) throw new Error("No class selected");
-      const today = new Date().toISOString().split("T")[0];
+      const today = schoolToday();
       const { error } = await supabase.from("weekday_attendance").upsert(
         {
           student_id: studentId,
