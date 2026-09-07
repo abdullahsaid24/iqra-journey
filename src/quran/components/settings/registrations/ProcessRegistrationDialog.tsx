@@ -57,7 +57,26 @@ export const ProcessRegistrationDialog = ({
 
       if (response.error) throw response.error;
 
-      toast.success("Registration processed successfully!");
+      // The function returns 207 with success:false when a student could not be
+      // created or linked. That is still a 2xx, so response.error is null and it
+      // used to be reported as a success - which is how three children ended up
+      // with no contactable parent while the registration read "Processed".
+      if (response.data && response.data.success === false) {
+        const problems = (response.data.results?.errors ?? []) as Array<{
+          type: string; name?: string; error: string;
+        }>;
+        console.error('Registration processed incompletely:', response.data.results);
+        toast.error(response.data.message || 'Registration only partly processed', {
+          description: problems
+            .map(p => (p.name ? p.name + ': ' : '') + p.error)
+            .join(' | ') || undefined,
+          duration: 15000,
+        });
+        onSuccess();
+        return;
+      }
+
+      toast.success(response.data?.message || "Registration processed successfully!");
       onSuccess();
       onOpenChange(false);
     } catch (error: any) {
