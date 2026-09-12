@@ -133,6 +133,27 @@ export const LessonSubmitSection = ({
     const toastId = toast.loading("Updating lesson and sending notification...");
 
     try {
+      // Passing is recorded as a homework_assignments row with status 'passed'.
+      // Removing it stopped students moving to Completed, stopped monthly_progress
+      // counting passes, stopped total_verses_read incrementing, stopped
+      // failure_level resetting, and broke the pass SMS - send-sms rejects a
+      // request with no lesson_id, is_homework or sms_message.
+      const { data: homework, error: homeworkError } = await supabase
+        .from("homework_assignments")
+        .insert({
+          student_id: studentId,
+          class_id: classId,
+          surah: surahRange,
+          verses: verses,
+          status: 'passed',
+          assigned_by: session.user.id,
+          type: 'lesson'
+        })
+        .select()
+        .single();
+
+      if (homeworkError) throw homeworkError;
+
       const { error: lessonError } = await supabase.from("lessons").insert({
         student_id: studentId,
         class_id: classId,
@@ -161,7 +182,7 @@ export const LessonSubmitSection = ({
         const response = await supabase.functions.invoke('send-sms', {
           body: {
             student_id: studentId,
-            lesson_id: null,
+            lesson_id: homework?.id,
             is_passing: true,
             is_homework: false,
           }
