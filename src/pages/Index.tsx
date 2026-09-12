@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Navigation from "@/components/Navigation";
 import Hero from "@/components/Hero";
+import FeaturedEvent from "@/components/FeaturedEvent";
 import Footer from "@/components/Footer";
 import { BookOpen, Users, X, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -37,6 +38,8 @@ const Index = () => {
 
       <main>
         <Hero />
+
+        <FeaturedEvent />
 
         <section className="container px-4 py-24">
           <div className="text-center mb-16 space-y-4">
