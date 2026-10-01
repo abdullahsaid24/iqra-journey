@@ -1,7 +1,6 @@
 import { useState } from "react";
 import Navigation from "@/components/Navigation";
 import Hero from "@/components/Hero";
-import FeaturedEvent from "@/components/FeaturedEvent";
 import Footer from "@/components/Footer";
 import { BookOpen, Users, X, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -38,8 +37,6 @@ const Index = () => {
 
       <main>
         <Hero />
-
-        <FeaturedEvent />
 
         <section className="container px-4 py-24">
           <div className="text-center mb-16 space-y-4">
@@ -101,7 +98,9 @@ const Index = () => {
       </main>
 
       {showPaymentNotice && (
-        <div className="fixed bottom-4 right-4 z-50">
+        /* Bottom-left on a wide screen, where the event poster fills the right
+           of the hero and this would sit on top of its corner. */
+        <div className="fixed bottom-4 right-4 lg:right-auto lg:left-4 z-50">
           <div className="bg-card rounded-lg shadow-lg border border-border/50 p-2 max-w-[220px] relative">
             <button
               onClick={() => setShowPaymentNotice(false)}
