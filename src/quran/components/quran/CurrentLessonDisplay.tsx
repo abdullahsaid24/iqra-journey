@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useState } from "react";
-import { TanzilViewer } from "./TanzilViewer";
+
 import { LessonForm } from "./LessonForm";
 import { LessonStatus } from "./LessonStatus";
 import { LessonTypeSelector } from "./LessonTypeSelector";
@@ -9,6 +9,7 @@ import { GoalSettingForm } from "./GoalSettingForm";
 import { GoalStatus } from "./GoalStatus";
 import { useIsMobile } from "@/quran/hooks/use-mobile";
 import { formatLessonDisplay } from "@/quran/lib/utils";
+import { useLessonWeeks } from "@/quran/hooks/useLessonWeeks";
 
 type LessonType = 'current_lesson' | 'goal_setting' | 'ahsanul_qawaid_book_1' | 'noor_al_bayan' | 'full_quran';
 
@@ -45,6 +46,7 @@ export const CurrentLessonDisplay = ({
   onFormStartChange
 }: CurrentLessonDisplayProps) => {
   const isMobile = useIsMobile();
+  const { data: lessonWeeks } = useLessonWeeks(studentId, classId);
   
   const renderForm = () => {
     if (!studentId || !onLessonUpdate) return null;
@@ -117,9 +119,19 @@ export const CurrentLessonDisplay = ({
             />
           </div>
           <div className="flex items-center gap-2 sm:gap-4 w-full xs:w-auto justify-between xs:justify-end">
-            <span className="text-xs sm:text-sm text-gray-900 whitespace-nowrap font-medium">
-              {currentLesson ? formatLessonDisplay(currentLesson.surah, currentLesson.verses) : "Not set"}
-            </span>
+            <div className="flex flex-col items-end leading-tight">
+              <span className="text-xs sm:text-sm text-gray-900 whitespace-nowrap font-medium">
+                {currentLesson ? formatLessonDisplay(currentLesson.surah, currentLesson.verses) : "Not set"}
+              </span>
+              {currentLesson && lessonWeeks && lessonWeeks.weeks > 0 && (
+                <span
+                  className="text-[11px] sm:text-xs font-semibold text-amber-700 whitespace-nowrap"
+                  title={`First given on ${lessonWeeks.assignedOn}`}
+                >
+                  {lessonWeeks.weeks} week{lessonWeeks.weeks !== 1 ? 's' : ''} on this
+                </span>
+              )}
+            </div>
             {renderStatus()}
           </div>
         </div>
