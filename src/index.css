@@ -1,5 +1,8 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=Inter:wght@400;500&display=swap');
+/* Surah headers and the standalone basmala in the mushaf: the QCF page fonts
+   carry verse words only, and the separate header face is not on the CDN. */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;600&display=swap');
 
 @tailwind base;
 @tailwind components;

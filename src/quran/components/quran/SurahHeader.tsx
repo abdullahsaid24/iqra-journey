@@ -1,46 +1,41 @@
 import type { SurahInfo } from "@/quran/types/mushaf";
-import { toArabicNumerals } from "@/quran/lib/mushaf-formatter";
 
 interface SurahHeaderProps {
   surah: SurahInfo;
+  /** Sized to one printed line so the page keeps its 15-line geometry. */
+  height: number;
+  fontSize: number;
 }
 
-export const SurahHeader = ({ surah }: SurahHeaderProps) => {
-  const revelationText = surah.revelation_place === "makkah" ? "مَكِّيَّة" : "مَدَنِيَّة";
-  const versesCount = toArabicNumerals(surah.verses_count);
-  
+/**
+ * The ornamented band the print puts above a surah's first line.
+ *
+ * It occupies exactly one line slot. The surah name is ordinary Arabic text in
+ * a naskh face, not a QCF glyph - the page fonts carry verse words only, and
+ * the separate header font is not published on the CDN.
+ */
+export const SurahHeader = ({ surah, height, fontSize }: SurahHeaderProps) => {
   return (
-    <div className="surah-header-container">
-      <div className="surah-header-banner">
-        {/* Left ornament */}
-        <div className="surah-header-ornament surah-header-ornament-left">
-          <svg viewBox="0 0 50 30" className="w-12 h-8">
-            <path d="M45 15 C40 5, 30 5, 25 15 C20 5, 10 5, 5 15 C10 25, 20 25, 25 15 C30 25, 40 25, 45 15" 
-                  fill="none" stroke="currentColor" strokeWidth="1.5"/>
-          </svg>
-        </div>
-        
-        {/* Surah info */}
-        <div className="surah-header-content">
-          <div className="surah-header-name">
-            سُورَةُ {surah.name_arabic}
-          </div>
-          <div className="surah-header-info">
-            <span>{revelationText}</span>
-            <span className="surah-header-separator">۞</span>
-            <span>آياتها {versesCount}</span>
-          </div>
-        </div>
-        
-        {/* Right ornament */}
-        <div className="surah-header-ornament surah-header-ornament-right">
-          <svg viewBox="0 0 50 30" className="w-12 h-8">
-            <path d="M5 15 C10 5, 20 5, 25 15 C30 5, 40 5, 45 15 C40 25, 30 25, 25 15 C20 25, 10 25, 5 15" 
-                  fill="none" stroke="currentColor" strokeWidth="1.5"/>
-          </svg>
-        </div>
+    <div className="flex items-center justify-center" style={{ height }}>
+      <div
+        className="flex items-center justify-center w-full"
+        style={{
+          height: height * 0.82,
+          border: "1.5px solid #b08f52",
+          borderRadius: 3,
+          background: "linear-gradient(#f7edd6, #efe0c0 60%, #e8d5ad)",
+          boxShadow: "inset 0 0 0 3px #fbf5e6, inset 0 0 0 4px #cfae70",
+          fontFamily: "'Noto Naskh Arabic', serif",
+          fontWeight: 600,
+          fontSize,
+          color: "#6b4f2a",
+          letterSpacing: ".02em",
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+        }}
+      >
+        سورة {surah.name_arabic}
       </div>
     </div>
   );
 };
-

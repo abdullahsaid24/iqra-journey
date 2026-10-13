@@ -11,7 +11,8 @@ import { JUZ_DATA } from "@/quran/types/juz";
 import { CompactSurahSelect } from "./CompactSurahSelect";
 import { CompactVerseSelect } from "./CompactVerseSelect";
 import { CompactJuzSelect } from "./CompactJuzSelect";
-import { MushafPdfViewer } from "./MushafPdfViewer";
+import { MushafPageComponent } from "./MushafPage";
+import { useQuranPageWords } from "@/quran/hooks/useQuranPageWords";
 
 interface MushafViewerProps {
   currentPage?: number;
@@ -36,9 +37,8 @@ export const MushafViewer = ({
   const [navigationSurah, setNavigationSurah] = useState<string>("");
   const [navigationVerse, setNavigationVerse] = useState<string>("");
 
-  // No longer need to fetch word data - using PDF instead
-  const isLoading = false;
-  const error = null;
+  // The page is drawn from its QCF glyphs, so the word data is the page.
+  const { data: mushafPage, isLoading, error } = useQuranPageWords(pageNumber);
 
   // Build selected verse keys array
   const getSelectedVerseKeys = (): string[] => {
@@ -261,8 +261,7 @@ export const MushafViewer = ({
     };
   }, [pageNumber, isLoading]);
 
-  // For PDF viewer, we don't have verse data, so show empty surah names
-  const surahNames: string[] = [];
+  const surahNames = mushafPage?.surahs.map(s => s.name_arabic) ?? [];
   const selectedVerseKeys = getSelectedVerseKeys();
 
   return (
@@ -334,8 +333,8 @@ export const MushafViewer = ({
         </div>
 
         <div className="w-full bg-mushaf-cream">
-          <MushafPdfViewer
-            pageNumber={pageNumber}
+          <MushafPageComponent
+            page={mushafPage}
             isLoading={isLoading}
             onVerseSelect={handleVerseClick}
             selectedVerseKeys={selectedVerseKeys}
