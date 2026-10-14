@@ -89,9 +89,29 @@ export const ClassContent = ({
     onStudentSelect("");
   };
 
+  /**
+   * "Stats & Reports" leaves the class view rather than rendering in the tab.
+   *
+   * Two things this has to get right. The tab is put back to the lesson before
+   * leaving, because the stats panel is deliberately empty - without this,
+   * coming back from the stats page left the tab still on "stats" and showed a
+   * blank panel.
+   *
+   * And the class goes with it. A student in a linked weekday/weekend pair has
+   * separate lessons in each, and useActiveClassId reads ?class= to know which
+   * the teacher is looking at. Without it the stats page fell back to the
+   * student's own class_id - the weekend side - and showed the other class's
+   * work to a teacher who had opened them from the weekday roster.
+   */
   const handleViewStats = () => {
-    // Navigate directly to the student stats page
-    navigate(`/quran/student/${selectedStudentId}/stats`);
+    if (!selectedStudentId) {
+      toast.error("Select a student first");
+      return;
+    }
+    setActiveTab("lesson");
+    navigate(
+      `/quran/student/${selectedStudentId}/stats${classId ? `?class=${classId}` : ""}`
+    );
   };
 
   const handleDeleteClick = (student: { id: string, name: string }) => {
@@ -173,8 +193,20 @@ export const ClassContent = ({
                 />
               </TabsContent>
               
-              {/* Stats tab content remains empty as we navigate to another page */}
-              <TabsContent value="stats"></TabsContent>
+              {/*
+                Clicking the trigger navigates away, so this is only ever on
+                screen for the instant before the stats page loads. It is not
+                empty, so that if the navigation is ever prevented the teacher
+                sees something they can act on instead of a blank panel.
+              */}
+              <TabsContent value="stats" className="mt-0">
+                <div className="py-10 text-center text-slate-500 space-y-3">
+                  <p>Opening stats &amp; reports…</p>
+                  <Button variant="outline" size="sm" onClick={handleViewStats}>
+                    Open stats for this student
+                  </Button>
+                </div>
+              </TabsContent>
             </Tabs>
           </div>
         )}
