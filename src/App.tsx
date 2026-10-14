@@ -29,8 +29,10 @@ import QuranSettings from "@/quran/pages/Settings";
 import QuranParentDashboard from "@/quran/pages/ParentDashboard";
 import QuranParentChildView from "@/quran/pages/ParentChildView";
 import QuranAttendanceDashboard from "@/quran/pages/AttendanceDashboard";
+import QuranLessonPractice from "@/quran/pages/LessonPractice";
 import SelfCheckIn from "@/quran/pages/SelfCheckIn";
 import { ProtectedRoute } from "@/quran/components/routing/ProtectedRoute";
+import { StudentAccessRoute } from "@/quran/components/routing/StudentAccessRoute";
 import { AdminTeacherRoute } from "@/quran/components/routing/AdminTeacherRoute";
 import { ParentRoute } from "@/quran/components/routing/ParentRoute";
 import { StudentRoute } from "@/quran/components/routing/StudentRoute";
@@ -111,6 +113,16 @@ function App() {
               <Route path="/quran/student/:id/stats" element={
                 <ProtectedRoute>
                   <QuranStudentStats />
+                </ProtectedRoute>
+              } />
+
+              {/* Addressed by student id, so it needs an ownership check and
+                  not just a signed-in check. */}
+              <Route path="/quran/student/:studentId/practice" element={
+                <ProtectedRoute>
+                  <StudentAccessRoute>
+                    <QuranLessonPractice />
+                  </StudentAccessRoute>
                 </ProtectedRoute>
               } />
 
