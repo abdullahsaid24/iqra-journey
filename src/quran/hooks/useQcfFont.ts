@@ -29,16 +29,22 @@ const injected = new Set<number>();
 /**
  * Returns the font family for the page and whether its glyphs have arrived.
  * Callers that measure rendered text must wait for `ready` - until the face
- * loads there are no real glyph widths to measure.
+ * loads there are no real glyph widths to measure. `ready` is not proof that
+ * the text has been re-laid out in the face, though: Safari can resolve the
+ * load before it repaints, so a measurement has to keep watching for widths
+ * that change afterwards.
  */
 export const useQcfFont = (page: number) => {
   const family = qcfFamily(page);
-  const [ready, setReady] = useState(false);
+  // Which page's face has loaded, rather than a bare flag. A boolean stays true
+  // through the first render of the next page - before this effect can reset
+  // it - so the caller measured the new page's lines in a face that had not
+  // even been requested yet.
+  const [readyPage, setReadyPage] = useState(0);
 
   useEffect(() => {
     if (!page || page < 1 || page > 604) return;
     let cancelled = false;
-    setReady(false);
 
     // One <style> per page, kept for the session: flipping back and forth
     // between pages is normal here and re-fetching the face each time would
@@ -56,7 +62,7 @@ export const useQcfFont = (page: number) => {
       document.head.appendChild(style);
     }
 
-    const done = () => { if (!cancelled) setReady(true); };
+    const done = () => { if (!cancelled) setReadyPage(page); };
     // Resolve either way: a failed load should not leave the page blank
     // forever, and the measuring pass needs to run regardless.
     document.fonts.load(`1em '${family}'`).then(done).catch(done);
@@ -64,5 +70,5 @@ export const useQcfFont = (page: number) => {
     return () => { cancelled = true; };
   }, [page, family]);
 
-  return { family, ready };
+  return { family, ready: readyPage === page };
 };

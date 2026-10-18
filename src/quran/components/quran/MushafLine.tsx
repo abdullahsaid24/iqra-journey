@@ -1,6 +1,9 @@
 import { QCF_CODE_FIELD } from "@/quran/hooks/useQcfFont";
 import type { MushafWord } from "@/quran/types/mushaf";
 
+/** Space between the words of a centred line, in em. The page fits lines with it. */
+export const CENTRED_WORD_GAP = 0.35;
+
 interface MushafLineProps {
   words: MushafWord[];
   lineNumber: number;
@@ -52,7 +55,7 @@ export const MushafLine = ({
         // centred instead. Stretching that one is what made the old renderer
         // look wrong.
         justifyContent: justified === false ? "center" : "space-between",
-        gap: justified === false ? ".35em" : undefined,
+        gap: justified === false ? `${CENTRED_WORD_GAP}em` : undefined,
       }}
     >
       {words.map((word, index) => {

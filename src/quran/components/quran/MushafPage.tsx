@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
-import { MushafLine } from "./MushafLine";
+import { CENTRED_WORD_GAP, MushafLine } from "./MushafLine";
 import { SurahHeader } from "./SurahHeader";
 import { toArabicNumerals } from "@/quran/lib/mushaf-formatter";
 import { useQcfFont } from "@/quran/hooks/useQcfFont";
@@ -148,8 +148,30 @@ export const MushafPageComponent = ({
    * once gives the exact size at which it fills the column, and one pass
    * settles it. Below ~400px this lands on small text, which is correct - the
    * alternative is breaking the printed line structure.
+   *
+   * It cannot be measured just once, though. Safari can report the face as
+   * loaded before it has re-laid the text out in it, so a single pass measured
+   * fallback-font widths and then never looked again once the real glyphs
+   * landed - lines ran off the sheet on phones. Every word is watched instead,
+   * and any change in their widths refits the page.
    */
   const [fontSize, setFontSize] = useState(18);
+  // Read by the observer, which outlives the render it was created in.
+  const fontSizeRef = useRef(fontSize);
+  fontSizeRef.current = fontSize;
+
+  /**
+   * Lines too full to be centred. A centred line puts a gap between its words,
+   * so a line a surah closes on that is really a full print line - the last
+   * line of al-Hadid on page 541 - ran past both edges of the column. Those are
+   * stretched like any other full line instead. Kept as a sorted string so an
+   * unchanged set does not re-render the page.
+   */
+  const [overfullKey, setOverfullKey] = useState("");
+  const overfullLines = useMemo(
+    () => new Set(overfullKey ? overfullKey.split(",").map(Number) : []),
+    [overfullKey],
+  );
 
   useLayoutEffect(() => {
     if (!columnWidth) return;
@@ -158,27 +180,53 @@ export const MushafPageComponent = ({
     // so start from the ratio the print uses and refine once it arrives.
     if (!fontReady) {
       setFontSize(clamp(7, columnWidth * 0.039, 60));
+      // The previous page's lines say nothing about this one's.
+      setOverfullKey("");
       return;
     }
 
     const root = columnRef.current;
     if (!root) return;
 
-    let widest = 0;
-    root.querySelectorAll<HTMLElement>("[data-line]").forEach((el) => {
-      const used = Array.from(el.children).reduce(
-        (sum, child) => sum + child.getBoundingClientRect().width,
-        0,
-      );
-      if (used > widest) widest = used;
-    });
-    if (widest <= 0) return;
+    // A backstop against two sizes that each measure as the other's fit.
+    let refits = 0;
 
-    const widthPerPx = widest / fontSize;
-    const fitted = clamp(7, (columnWidth * 0.995) / widthPerPx, 60);
-    // Deadband, so sub-pixel rounding cannot start an endless resize loop.
-    if (Math.abs(fitted - fontSize) > 0.4) setFontSize(fitted);
-  }, [fontReady, columnWidth, family, page, fontSize]);
+    const fit = () => {
+      const lines = Array.from(root.querySelectorAll<HTMLElement>("[data-line]")).map((el) => ({
+        lineNumber: Number(el.dataset.line),
+        words: el.children.length,
+        used: Array.from(el.children).reduce(
+          (sum, child) => sum + child.getBoundingClientRect().width,
+          0,
+        ),
+      }));
+      const widest = Math.max(0, ...lines.map((line) => line.used));
+      if (widest <= 0) return;
+
+      const current = fontSizeRef.current;
+      const fitted = clamp(7, (columnWidth * 0.995) / (widest / current), 60);
+
+      // Judged at the size the page is settling on, with the gap MushafLine
+      // puts between centred words.
+      const scale = fitted / current;
+      const overfull = lines
+        .filter(({ words, used }) =>
+          used * scale + CENTRED_WORD_GAP * fitted * (words - 1) > columnWidth * 0.995)
+        .map((line) => line.lineNumber)
+        .sort((a, b) => a - b)
+        .join(",");
+      setOverfullKey(overfull);
+
+      // Deadband, so sub-pixel rounding cannot start an endless resize loop.
+      if (Math.abs(fitted - current) > 0.4 && refits++ < 12) setFontSize(fitted);
+    };
+
+    fit();
+
+    const ro = new ResizeObserver(fit);
+    root.querySelectorAll("[data-line] > *").forEach((word) => ro.observe(word));
+    return () => ro.disconnect();
+  }, [fontReady, columnWidth, family, page]);
 
   const lineHeight = fontSize * 1.95;
   const chromeFont = clamp(9, wrapWidth * 0.018, 15);
@@ -305,7 +353,9 @@ export const MushafPageComponent = ({
    * it. The two cases where it does not are a line a surah ends on, and the
    * line that ends a page whose text stops before the fifteenth - the opening
    * pages, where the block sits inside a large decorative frame. Stretching
-   * either one tears its last few words apart across the full width.
+   * either one tears its last few words apart across the full width. Unless
+   * the line is too full to centre at all, in which case it was a full line in
+   * the print too.
    */
   const lastSlotWithWords = lineSlots.reduce(
     (last, slot, i) => (slot.words.length ? i + 1 : last),
@@ -380,8 +430,9 @@ export const MushafPageComponent = ({
               fontSize={fontSize}
               height={lineHeight}
               justified={
-                !closesASurah(words) &&
-                !(blockEndsEarly && lineNumber === lastSlotWithWords)
+                overfullLines.has(lineNumber) ||
+                (!closesASurah(words) &&
+                  !(blockEndsEarly && lineNumber === lastSlotWithWords))
               }
               onWordClick={onVerseSelect}
               selectedVerseKeys={selectedVerseKeys}
