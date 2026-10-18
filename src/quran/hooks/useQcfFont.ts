@@ -8,16 +8,17 @@ import { useEffect, useState } from "react";
  * line breaks and justification instead of approximating them with ordinary
  * Arabic text, which is what the PDF was there to work around.
  *
- * We draw the V4 outlines using the API's code_v2 values. The API publishes no
- * codes of its own for V4, and that substitution is safe rather than lucky:
- * the v2 and v4 fonts carry an identical cmap - the same codepoints mapping to
- * the same glyph names - verified with fontTools across pages 1, 3, 50, 77,
- * 255, 300, 450 and 604. Only the outlines differ, never which word a code
- * draws. If the edition is ever switched to V1, the word field must switch to
- * code_v1 with it; V1 has a genuinely different encoding.
+ * The edition must be the one the codes were published for: V2 fonts with the
+ * API's code_v2. The V4 fonts were used here once, on the grounds that their
+ * cmap matches V2's, but matching codepoints is not matching glyphs - on many
+ * pages V4 draws a line's words at widths that no longer fill the line (page
+ * 337 ranges from 58% to 100% of the column), so the lines came out with wide
+ * gaps beside cramped ones and stray waqf marks. With V2, every line of every
+ * page measured fills 96-100%, as in the print. If the edition is ever
+ * switched to V1, the word field must switch to code_v1 with it.
  */
 
-export const QCF_EDITION = 'v4';
+export const QCF_EDITION = 'v2';
 
 /** The field on a word holding the codes this edition is drawn from. */
 export const QCF_CODE_FIELD = 'code_v2' as const;
