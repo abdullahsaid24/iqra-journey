@@ -45,7 +45,19 @@ export const LessonSubmitSection = ({
 }: LessonSubmitSectionProps) => {
   const navigate = useNavigate();
   
-  const handleUpdateLesson = async () => {
+  /**
+   * Save the work the student is now on, and tell the parents.
+   *
+   * markPassed true is the normal end of a recitation: the lesson is recorded
+   * as passed, and the pass message goes out - which already names the new
+   * lesson as well as the pass.
+   *
+   * markPassed false is for setting the homework on its own - giving them next
+   * week's portion, or correcting what was entered, without having heard them
+   * read. The parents still get a message, but the homework one rather than a
+   * pass or a fail, and nothing is credited as a pass.
+   */
+  const submitLesson = async ({ markPassed }: { markPassed: boolean }) => {
     if (!studentId) {
       toast.error("No student selected");
       return;
@@ -130,14 +142,25 @@ export const LessonSubmitSection = ({
       return;
     }
 
-    const toastId = toast.loading("Updating lesson and sending notification...");
+    const toastId = toast.loading(
+      markPassed
+        ? "Updating lesson and sending notification..."
+        : "Updating homework and sending notification..."
+    );
 
     try {
-      // Passing is recorded as a homework_assignments row with status 'passed'.
-      // Removing it stopped students moving to Completed, stopped monthly_progress
-      // counting passes, stopped total_verses_read incrementing, stopped
-      // failure_level resetting, and broke the pass SMS - send-sms rejects a
-      // request with no lesson_id, is_homework or sms_message.
+      // The assignment row is what the message is built from - send-sms reads
+      // its surah and verses to fill {{surah}} and {{verses}} - so it is always
+      // written, and only its status differs.
+      //
+      // 'passed' is what records the pass: it moves the student to Completed,
+      // counts towards monthly_progress, increments total_verses_read and
+      // resets failure_level. 'pending' means assigned but not yet assessed,
+      // which is exactly what updating homework is, and leaves all of that
+      // alone - update_lesson_failure_level only acts on 'passed' and 'failed'.
+      //
+      // type stays 'lesson'. A check constraint, homework_assignments_type_check,
+      // rejects anything else; every row in the table is type 'lesson'.
       const { data: homework, error: homeworkError } = await supabase
         .from("homework_assignments")
         .insert({
@@ -145,7 +168,7 @@ export const LessonSubmitSection = ({
           class_id: classId,
           surah: surahRange,
           verses: verses,
-          status: 'passed',
+          status: markPassed ? 'passed' : 'pending',
           assigned_by: session.user.id,
           type: 'lesson'
         })
@@ -179,12 +202,17 @@ export const LessonSubmitSection = ({
       }
 
       try {
+        // Both paths message the parents; the flags choose which template.
+        // is_passing picks lesson_pass - "has passed their lesson today! Their
+        // new lesson is ..." - while is_homework picks homework_assigned -
+        // "New homework has been assigned ... Please practice ...". Neither is
+        // hardcoded here, so the wording stays editable per class in Settings.
         const response = await supabase.functions.invoke('send-sms', {
           body: {
             student_id: studentId,
             lesson_id: homework?.id,
-            is_passing: true,
-            is_homework: false,
+            is_passing: markPassed,
+            is_homework: !markPassed,
           }
         });
 
@@ -198,13 +226,13 @@ export const LessonSubmitSection = ({
             toast.warning("Lesson updated but no notifications were sent");
           }
         }
-        
+
         // Always call onDone to return to class list immediately
         onDone?.();
       } catch (smsError) {
         console.error("Error sending notification:", smsError);
         toast.warning("Lesson updated but notification failed");
-        
+
         // Still call onDone even if SMS fails
         onDone?.();
       }
@@ -215,20 +243,49 @@ export const LessonSubmitSection = ({
       });
 
       toast.dismiss(toastId);
-      toast.success("Lesson updated successfully");
+      toast.success(
+        markPassed
+          ? "Lesson updated successfully"
+          : "Homework updated. No pass or fail was recorded."
+      );
     } catch (error: any) {
+      // The loading toast was never dismissed here, so a failure left it
+      // spinning forever and the real reason only reached the console.
+      toast.dismiss(toastId);
       console.error("Error updating lesson:", error);
-      toast.error("Failed to update lesson");
+      toast.error(
+        `Failed to update lesson: ${error?.message ?? "unknown error"}`,
+        { duration: 10000 }
+      );
     }
   };
 
   return (
-    <Button 
-      onClick={handleUpdateLesson}
-      className="w-full bg-quran-primary text-white hover:bg-quran-primary/90"
-      disabled={isLoading}
-    >
-      {isLoading ? "Loading..." : "Update Lesson & Send Notification"}
-    </Button>
+    <div className="space-y-2">
+      <Button
+        onClick={() => submitLesson({ markPassed: true })}
+        className="w-full bg-quran-primary text-white hover:bg-quran-primary/90"
+        disabled={isLoading}
+      >
+        {isLoading ? "Loading..." : "Passed — Update Lesson & Send Notification"}
+      </Button>
+
+      {/*
+        For setting the homework on its own. Kept as a separate button rather
+        than a checkbox on the one above, so the teacher cannot leave a setting
+        switched on by accident and silently stop a week of pass messages.
+      */}
+      <Button
+        onClick={() => submitLesson({ markPassed: false })}
+        variant="outline"
+        className="w-full"
+        disabled={isLoading}
+      >
+        Update Homework Only — no pass or fail
+      </Button>
+      <p className="text-xs text-slate-500 text-center">
+        Sends the homework message instead of a pass or fail, and records no result.
+      </p>
+    </div>
   );
 };

@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/quran/lib/supabase";
 import { toast } from "sonner";
 import { AVAILABLE_SURAHS } from "@/quran/types/quran";
-import { formatLessonDisplay, cleanVerseReferences } from "@/quran/lib/utils";
+import { formatLessonDisplay, cleanVerseReferences, splitSurahRange } from "@/quran/lib/utils";
 
 interface UseLessonManagementProps {
   studentId: string;
@@ -77,21 +77,24 @@ export const useLessonManagement = ({
 
   const prefillFromCurrentLesson = (lesson: { surah: string; verses: string }) => {
     try {
-      const surahName = lesson.surah;
-      
+      // A lesson across two surahs is stored as "Al-Ankaboot-Yaseen". Setting
+      // both dropdowns to that whole string matched no option and left them
+      // blank, so it is split back into its two real surah names.
+      const { start: startSurahName, end: endSurahName } = splitSurahRange(lesson.surah);
+
       // Clean and extract only numeric parts from verse references
       const versesString = lesson.verses || '';
       const verseParts = versesString.split('-').map(v => v.replace(/[^0-9]/g, ''));
-      
+
       const startVerseNum = verseParts[0] || '';
       const endVerseNum = verseParts.length > 1 ? verseParts[1] : startVerseNum;
-      
-      setStartSurah(surahName);
-      setEndSurah(surahName);
+
+      setStartSurah(startSurahName);
+      setEndSurah(endSurahName);
       setStartVerses(startVerseNum);
       setEndVerses(endVerseNum);
-      
-      setCurrentLessonSurah(surahName);
+
+      setCurrentLessonSurah(startSurahName);
       setIsLoading(false);
     } catch (error) {
       console.error("Error prefilling from current lesson:", error);
@@ -120,20 +123,21 @@ export const useLessonManagement = ({
       
       if (lessons && lessons.length > 0) {
         const currentLesson = lessons[0];
-        const surah = currentLesson.surah;
-        
+        // Same two-surah range as above - split before it reaches a dropdown.
+        const { start: startSurahName, end: endSurahName } = splitSurahRange(currentLesson.surah);
+
         // Clean and extract only numeric parts from verse references
         const versesString = currentLesson.verses || '';
         const verseParts = versesString.split('-').map(v => v.replace(/[^0-9]/g, ''));
-        
+
         const startVerseNum = verseParts[0] || '';
         const endVerseNum = verseParts.length > 1 ? verseParts[1] : startVerseNum;
-        
-        setStartSurah(surah);
-        setEndSurah(surah);
+
+        setStartSurah(startSurahName);
+        setEndSurah(endSurahName);
         setStartVerses(startVerseNum);
         setEndVerses(endVerseNum);
-        setCurrentLessonSurah(surah);
+        setCurrentLessonSurah(startSurahName);
       }
     } catch (error) {
       console.error("Error fetching current lesson:", error);

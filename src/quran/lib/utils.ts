@@ -1,6 +1,7 @@
 
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { AVAILABLE_SURAHS } from "@/quran/types/quran";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -75,4 +76,37 @@ export const formatLessonDisplay = (surah: string | undefined, verses: string | 
   
   // Return the properly formatted reference
   return `${surah}:${verses}`;
+};
+
+/**
+ * Split a stored lesson's surah field back into its start and end surah.
+ *
+ * A lesson spanning two surahs is stored joined with a hyphen -
+ * "Al-Ankaboot-Yaseen" - but 96 of the 114 surah names contain a hyphen
+ * themselves, so the joining one cannot be found by position. Every hyphen is
+ * tried instead, and the split is accepted only where both sides are real
+ * surah names.
+ *
+ * This is what the lesson form needs to prefill its dropdowns. Handing a Select
+ * the whole "Al-Ankaboot-Yaseen" string matches none of its options and renders
+ * blank, which is why multi-surah lessons came up with empty fields while
+ * single-surah ones were fine.
+ */
+export const splitSurahRange = (value?: string | null): { start: string; end: string } => {
+  const raw = (value ?? '').trim();
+  if (!raw) return { start: '', end: '' };
+
+  const names = new Set(AVAILABLE_SURAHS.map(s => s.name));
+  if (names.has(raw)) return { start: raw, end: raw };
+
+  for (let i = 0; i < raw.length; i++) {
+    if (raw[i] !== '-') continue;
+    const left = raw.slice(0, i).trim();
+    const right = raw.slice(i + 1).trim();
+    if (names.has(left) && names.has(right)) return { start: left, end: right };
+  }
+
+  // Not a recognisable range - a book or page lesson, or a name that has since
+  // changed. Left untouched rather than guessed at.
+  return { start: raw, end: raw };
 };
